@@ -1,0 +1,50 @@
+name: CI
+
+# Plan §9: lint/typecheck/test/build on every push on every branch + every PR.
+# Coverage gates are enforced per-package by vitest configs (from M1).
+# Test-report publishing (job summaries, PR comments, GitHub Pages) lands in M6.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint · typecheck · test · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4 # version from packageManager field
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc # CI runs the pinned Node, not latest
+          cache: pnpm
+
+      - uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      - run: pnpm build
+
+      - name: Bicep lint
+        if: ${{ hashFiles('infra/main.bicep') != '' }} # dormant until infra lands (M5)
+        run: az bicep build --file infra/main.bicep

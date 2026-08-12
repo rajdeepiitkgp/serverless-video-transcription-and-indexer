@@ -1,0 +1,9 @@
+# lockfile
+pnpm-lock.yaml
+
+# contract / historical documents — do not reformat
+IMPLEMENTATION_PLAN.md
+requirement.md
+
+# vendored third-party skills — keep upstream formatting
+.claude/skills/

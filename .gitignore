@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+out/
+.next/
+*.tsbuildinfo
+
+# caches
+.turbo/
+.swa/
+coverage/
+
+# local environment
+.env
+.env.*
+local.settings.json
+.claude/settings.local.json
+
+# diagnostics bundles (downloaded via `pnpm diagnostics`)
+.diagnostics/
+
+# OS
+.DS_Store
