@@ -37,7 +37,8 @@ Rules are tool-enforced wherever possible (ESLint/Prettier/tsc presets in
 ## React (apps/web — lands in M4)
 
 - Function components only; hooks for all state; no classes.
-- Components colocated with their tests; test with React Testing Library — assert on
+- Component tests live in the mirrored `tests/` tree (`apps/web/tests/components/…`,
+  see docs/testing-principles.md); test with React Testing Library — assert on
   what the user sees, not implementation details.
 - Server data flows through typed API-client hooks; components never call `fetch`
   directly.
@@ -60,6 +61,9 @@ Rules are tool-enforced wherever possible (ESLint/Prettier/tsc presets in
   allowed where shadcn conventions require them.
 - Folders by feature, not by kind, inside each package (`core/`, `ports/`, `adapters/`,
   `functions/` in services — see testing principles for what goes where).
+- Tests live in a per-package `tests/` tree mirroring `src/` 1:1, helpers in
+  `tests/support/` — never colocated with source (docs/testing-principles.md
+  "Where tests live").
 - Workspace packages are scoped `@vidx/*`.
 
 ## Cosmos schema versioning
