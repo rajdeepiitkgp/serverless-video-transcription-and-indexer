@@ -91,20 +91,28 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   the carve-out itself lands in `staticwebapp.config.json` (M4).
 - VI ARM api-version defaults to `2024-01-01`; override via `VI_ARM_API_VERSION` app
   setting if ARM drifts (plan §14 risk). Live verification pends the M5 deploy.
+- pnpm 11 demands a verdict on dependency build scripts: it scaffolds an `allowBuilds`
+  block into `pnpm-workspace.yaml` whose placeholder text is an **invalid value that
+  breaks every install** until each entry is set `true`/`false`. Current entries
+  (keytar, vue-demi) are deliberately `false` — see the comment there.
+- A package stylesheet imported _inside_ a `next/dynamic` chunk gets dropped by the
+  bundler — import it explicitly in your own module instead (bit us with Scalar on
+  `/docs`: issue #10, fixed in PR #11; pattern in `docs-view.tsx`).
 
 ## Layout & milestone status
 
-| Path                 | Contents                                    | Milestone |
-| -------------------- | ------------------------------------------- | --------- |
-| `packages/config`    | shared tsconfig/eslint/prettier presets     | **M0 ✅** |
-| `packages/shared`    | zod contracts → OpenAPI, VI insight parsers | **M1 ✅** |
-| `services/pipeline`  | EG-triggered indexing pipeline + Discord    | **M2 ✅** |
-| `services/webapi`    | HTTP API (SWA linked backend)               | **M3 ✅** |
-| `apps/web`           | Next.js static export UI                    | M4        |
-| `infra/`             | Bicep modules                               | M5        |
-| `.github/workflows/` | `ci.yml` (M0); deploys + AI review          | M6        |
+| Path                 | Contents                                                    | Milestone |
+| -------------------- | ----------------------------------------------------------- | --------- |
+| `packages/config`    | shared tsconfig/eslint/prettier presets                     | **M0 ✅** |
+| `packages/shared`    | zod contracts → OpenAPI, VI insight parsers                 | **M1 ✅** |
+| `services/pipeline`  | EG-triggered indexing pipeline + Discord                    | **M2 ✅** |
+| `services/webapi`    | HTTP API (SWA linked backend) + local dev host (`src/dev/`) | **M3 ✅** |
+| `apps/web`           | Next.js static export UI                                    | **M4 ✅** |
+| `infra/`             | Bicep modules                                               | M5        |
+| `.github/workflows/` | `ci.yml` (M0); deploys + AI review                          | M6        |
 
-Full milestone table: plan §13. **Current: M3 done; next up M4.**
+Full milestone table: plan §13. **Current: M4 code merged (PRs #8, #9, #11); the
+owner's interactive `pnpm dev` acceptance pass is still pending. Next up M5.**
 
 ## Docs
 
