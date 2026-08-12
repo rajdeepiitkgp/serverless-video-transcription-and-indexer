@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Build ships everything the Functions host and the replay CLI need at runtime —
+  // including src/testing/ (the in-memory fakes back `pnpm replay`). Only tests are
+  // excluded.
+  "extends": "@vidx/config/typescript/node.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "demo-0001",
+  "videoId": "b3f1a2c4d5",
+  "schemaVersion": 1,
+  "name": "product-demo.mp4",
+  "blobPath": "videos/demo-0001/product-demo.mp4",
+  "playable": true,
+  "status": "Indexing",
+  "uploadedBy": {
+    "userId": "u-1001",
+    "userDetails": "rajdeep@example.com"
+  },
+  "keywords": [],
+  "topics": [],
+  "transcript": [],
+  "chapters": [],
+  "resultsPrefix": "results/demo-0001/",
+  "trackingIds": {
+    "upload": "VXT-1a2b3c4d"
+  },
+  "submittedAt": "2026-08-10T14:03:22.000Z",
+  "error": null
+}

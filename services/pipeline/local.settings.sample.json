@@ -1,0 +1,18 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "STORAGE_BLOB_ENDPOINT": "http://127.0.0.1:10000/devstoreaccount1",
+    "COSMOS_ENDPOINT": "https://localhost:8081",
+    "EVENT_GRID_TOPIC_ENDPOINT": "https://vidx-local.eastus-1.eventgrid.azure.net/api/events",
+    "VI_SUBSCRIPTION_ID": "00000000-0000-0000-0000-000000000000",
+    "VI_RESOURCE_GROUP": "rg-vidx-prod",
+    "VI_ACCOUNT_NAME": "vidx-vi",
+    "VI_ACCOUNT_ID": "00000000-0000-0000-0000-000000000000",
+    "VI_LOCATION": "eastus",
+    "VI_CALLBACK_URL": "https://vidx-pipeline.azurewebsites.net/api/indexing-callback?code=<function-key>",
+    "DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/<id>/<token>",
+    "WEB_BASE_URL": "https://vidx.example.com"
+  }
+}

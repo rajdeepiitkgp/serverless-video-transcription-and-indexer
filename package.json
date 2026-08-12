@@ -13,6 +13,7 @@
     "lint": "prettier --check . && turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "replay": "turbo run build --filter=@vidx/pipeline && pnpm --filter @vidx/pipeline replay",
     "format": "prettier --write .",
     "prepare": "husky"
   },
