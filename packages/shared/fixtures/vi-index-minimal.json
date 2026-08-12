@@ -1,0 +1,121 @@
+{
+  "partition": null,
+  "description": null,
+  "privacyMode": "Private",
+  "state": "Processed",
+  "accountId": "6f9f7c41-2f0e-4a8c-9c60-2b5b9f3f1a7d",
+  "id": "m1n1m4l001",
+  "name": "silent-screencap.avi",
+  "userName": "Rajdeep Biswas",
+  "created": "2026-08-11T08:15:41.12+00:00",
+  "isOwned": true,
+  "isEditable": true,
+  "isBase": true,
+  "durationInSeconds": 8,
+  "duration": "0:00:08",
+  "summarizedInsights": {
+    "name": "silent-screencap.avi",
+    "id": "m1n1m4l001",
+    "privacyMode": "Private",
+    "duration": {
+      "time": "0:00:08",
+      "seconds": 8
+    },
+    "thumbnailVideoId": "m1n1m4l001",
+    "thumbnailId": "5e6f7a8b-1111-4222-8333-944444444444",
+    "faces": [],
+    "keywords": [],
+    "sentiments": [],
+    "emotions": [],
+    "labels": [],
+    "framePatterns": [],
+    "brands": [],
+    "namedLocations": [],
+    "namedPeople": [],
+    "statistics": {
+      "correspondenceCount": 0,
+      "speakerTalkToListenRatio": {},
+      "speakerLongestMonolog": {},
+      "speakerNumberOfFragments": {},
+      "speakerWordCount": {}
+    },
+    "topics": []
+  },
+  "videos": [
+    {
+      "accountId": "6f9f7c41-2f0e-4a8c-9c60-2b5b9f3f1a7d",
+      "id": "m1n1m4l001",
+      "state": "Processed",
+      "moderationState": "OK",
+      "reviewState": "None",
+      "privacyMode": "Private",
+      "processingProgress": "100%",
+      "failureCode": "None",
+      "failureMessage": "",
+      "externalId": null,
+      "externalUrl": null,
+      "metadata": null,
+      "insights": {
+        "version": "1.0.0.0",
+        "duration": "0:00:08",
+        "sourceLanguage": "en-US",
+        "sourceLanguageConfidence": 0,
+        "language": "en-US",
+        "ocr": [],
+        "labels": [],
+        "shots": [
+          {
+            "id": 1,
+            "tags": [],
+            "keyFrames": [],
+            "instances": [
+              {
+                "adjustedStart": "0:00:00",
+                "adjustedEnd": "0:00:08",
+                "start": "0:00:00",
+                "end": "0:00:08"
+              }
+            ]
+          }
+        ],
+        "blocks": [],
+        "textualContentModeration": {
+          "id": 0,
+          "bannedWordsCount": 0,
+          "bannedWordsRatio": 0,
+          "instances": []
+        },
+        "statistics": {
+          "correspondenceCount": 0,
+          "speakerTalkToListenRatio": {},
+          "speakerLongestMonolog": {},
+          "speakerNumberOfFragments": {},
+          "speakerWordCount": {}
+        }
+      },
+      "detectSourceLanguage": false,
+      "languageAutoDetectMode": "None",
+      "sourceLanguage": "en-US",
+      "sourceLanguages": ["en-US"],
+      "language": "en-US",
+      "languages": ["en-US"],
+      "indexingPreset": "Default",
+      "streamingPreset": "NoStreaming",
+      "linguisticModelId": "00000000-0000-0000-0000-000000000000",
+      "personModelId": "00000000-0000-0000-0000-000000000000",
+      "isAdult": false,
+      "publishedUrl": null,
+      "publishedProxyUrl": null,
+      "viewToken": null
+    }
+  ],
+  "videosRanges": [
+    {
+      "videoId": "m1n1m4l001",
+      "range": {
+        "start": "0:00:00",
+        "end": "0:00:08"
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Build excludes tests and uses the browser-safe base preset (no `node` types):
+  // shared code runs in Functions *and* the web app, so `node:*` imports must fail here.
+  "extends": "@vidx/config/typescript/base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}
