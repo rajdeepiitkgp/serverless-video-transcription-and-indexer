@@ -18,8 +18,9 @@ pnpm install
 - **Trunk-based**: short-lived branches off `main`; `release/**` only for release cuts.
 - Branch names: `feat/…`, `fix/…`, `chore/…`, `docs/…`.
 - Flow: `git switch -c feat/<topic>` → commit → push → `gh pr create` → CI (`verify`)
-  must pass → merge. **Merged head branches are deleted automatically** (repo setting);
-  don't reuse them.
+  must pass → **review, approval, and merge by the repo owner**. Agent sessions stop
+  once `verify` is green and hand the PR over for review — they never merge or approve.
+  **Merged head branches are deleted automatically** (repo setting); don't reuse them.
 - `main` and `release/*` are protected by ruleset: PRs required, `verify` status check
   required, force pushes and deletion blocked.
 - **Conventional Commits**, enforced by commitlint on every commit:
