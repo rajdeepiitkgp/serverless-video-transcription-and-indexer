@@ -45,6 +45,10 @@ pnpm replay --bundle <dir>  # re-run pipeline core on a diagnostics bundle (plan
 - **TDD for domain logic** (`core/` in services): ports & adapters; Azure SDKs only in
   adapters; in-memory fakes at ports — never mock SDKs mid-stack. 80% coverage gate on
   `services/*` + `packages/shared`; `core/` parsers ~100%.
+- **Tests never live in `src/`**: each package has a `tests/` tree mirroring `src/`
+  1:1, helpers in `tests/support/` (docs/testing-principles.md "Where tests live").
+  Sole exception: `services/pipeline/src/testing/fakes.ts` is runtime code for
+  `pnpm replay` and stays in `src/`.
 - **Conventional Commits** (commitlint via husky), trunk-based on `main`.
 - **Never commit on `main`/`release/*`** — husky blocks it locally and GitHub rulesets
   reject direct pushes. Every change: `git switch -c <type>/<topic>` → commit → push →
@@ -71,7 +75,8 @@ pnpm replay --bundle <dir>  # re-run pipeline core on a diagnostics bundle (plan
 - `.claude/skills/` holds vendored design skills (`frontend-design`, `ui-ux-pro-max`) —
   they drive the M4 UI work ("Signal" design language, plan §4).
 - `services/pipeline` and `services/webapi` tests boot a throwaway **Azurite** on a
-  random port (vitest globalSetup, no Docker) for the blob-adapter integration tests;
+  random port (`tests/support/azurite-global-setup.ts` via vitest globalSetup, no
+  Docker) for the blob-adapter integration tests;
   VI/Discord/Event Grid adapters test against local HTTP stubs; Cosmos adapters against
   SDK-shaped stubs (emulator optional/nightly). All part of plain `pnpm test`.
 - webapi authn is **parsing `x-ms-client-principal`** (trustworthy only because Easy

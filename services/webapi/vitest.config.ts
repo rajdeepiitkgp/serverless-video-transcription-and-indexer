@@ -8,11 +8,12 @@ import { defineConfig } from 'vitest/config';
 // eslint-disable-next-line no-restricted-syntax -- Vitest requires a default export
 export default defineConfig({
   test: {
-    globalSetup: ['./test-support/azurite-global-setup.ts'],
+    include: ['tests/**/*.test.ts'],
+    globalSetup: ['./tests/support/azurite-global-setup.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/functions/**', 'src/app/composition-root.ts'],
+      exclude: ['src/functions/**', 'src/app/composition-root.ts'],
       thresholds: {
         lines: 80,
         branches: 80,

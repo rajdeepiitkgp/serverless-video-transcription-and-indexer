@@ -1,6 +1,29 @@
 # Testing principles
 
-The pyramid, from most tests to fewest:
+## Where tests live
+
+Tests are **never colocated with source**. Every package keeps its app code in `src/`
+and its tests in a sibling `tests/` tree that **mirrors `src/` 1:1**:
+
+```
+<package>/
+├── src/core/upload-policy.ts
+└── tests/
+    ├── core/upload-policy.test.ts   # same subpath as the code under test
+    └── support/                     # shared helpers: builders, fakes, deps bags,
+                                     #   Azurite global setup, HTTP stubs
+```
+
+- No `*.test.ts` (or `.test.tsx`) anywhere under `src/`.
+- Test helpers go in `tests/support/`, not next to specs.
+- The rule is repo-wide: `apps/web` follows it too (`apps/web/tests/components/…`).
+- **One exception**: `services/pipeline/src/testing/fakes.ts` stays in `src/` because
+  it is _runtime_ code — the replay harness (`pnpm replay`, plan §7) executes on those
+  fakes, so the build ships them. It is port-implementing infrastructure, not a test.
+
+## The pyramid
+
+From most tests to fewest:
 
 ## 1. Unit — pure domain (`core/`)
 
