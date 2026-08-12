@@ -8,7 +8,8 @@
     "./eslint/base": "./eslint/base.js",
     "./prettier": "./prettier/index.js",
     "./typescript/base.json": "./typescript/base.json",
-    "./typescript/node.json": "./typescript/node.json"
+    "./typescript/node.json": "./typescript/node.json",
+    "./typescript/react.json": "./typescript/react.json"
   },
   "scripts": {
     "lint": "eslint ."

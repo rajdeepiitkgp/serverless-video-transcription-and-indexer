@@ -1,0 +1,204 @@
+@import 'tailwindcss';
+
+/*
+ * "Signal" design tokens (plan §4) — a broadcast/edit-suite console. Every video is
+ * footage with a signal to extract; the UI reads like the deck it gets logged on.
+ *
+ * Dark is the brand-native mode, so `:root` carries the dark values and `.light`
+ * derives the paper theme from the same roles. next-themes stamps `.dark`/`.light`
+ * on <html> before first paint. All hues are warm-neutral (charcoal, not blue-black)
+ * with a single signal-amber accent; status hues carry meaning: amber pulse =
+ * indexing, green = processed, red = failed, cold slate = uploaded footage.
+ * Contrast: every `--fg-*`/status text token holds ≥4.5:1 against `--surface`.
+ */
+:root,
+.dark {
+  --canvas: #131110;
+  --surface: #1c1916;
+  --raised: #262119;
+  --overlay: #2e2820;
+  --line: #37312a;
+  --line-strong: #4d4436;
+  --fg: #efe9df;
+  --fg-muted: #b3a996;
+  --fg-faint: #968b78;
+  --accent: #f7a928;
+  --accent-solid: #f7a928;
+  --accent-solid-fg: #191204;
+  --status-idle: #9fb0bf;
+  --status-busy: #f7a928;
+  --status-ok: #4cc38a;
+  --status-err: #f4695f;
+}
+
+.light {
+  --canvas: #f5f4f1;
+  --surface: #ffffff;
+  --raised: #fbfaf7;
+  --overlay: #ffffff;
+  --line: #dfdad1;
+  --line-strong: #c4bcae;
+  --fg: #211d18;
+  --fg-muted: #5d564a;
+  --fg-faint: #6e6557;
+  --accent: #8f5a00;
+  --accent-solid: #f7a928;
+  --accent-solid-fg: #191204;
+  --status-idle: #526271;
+  --status-busy: #8a5800;
+  --status-ok: #1a7f4e;
+  --status-err: #be3d37;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-*: initial;
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-overlay: var(--overlay);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+  --color-accent: var(--accent);
+  --color-accent-solid: var(--accent-solid);
+  --color-accent-solid-fg: var(--accent-solid-fg);
+  --color-status-idle: var(--status-idle);
+  --color-status-busy: var(--status-busy);
+  --color-status-ok: var(--status-ok);
+  --color-status-err: var(--status-err);
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-display: var(--font-space-grotesk), ui-sans-serif, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Console hardware has tight corners. */
+  --radius-*: initial;
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.1875rem;
+  --radius-md: 0.3125rem;
+  --radius-lg: 0.5rem;
+  --radius-full: 9999px;
+
+  --animate-signal-pulse: signal-pulse 1.6s ease-in-out infinite;
+
+  @keyframes signal-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-fg antialiased;
+  }
+
+  ::selection {
+    background: var(--accent-solid);
+    color: var(--accent-solid-fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * Scanline divider — the thin dashed rule that separates sections the way a
+   * horizontal blanking line separates fields on a monitor.
+   */
+  .scanline {
+    height: 1px;
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--line-strong) 0,
+      var(--line-strong) 6px,
+      transparent 6px,
+      transparent 10px
+    );
+  }
+
+  /*
+   * Film-frame card — sprocket-hole strips along the top and bottom edges, so
+   * video cards read as frames pulled from a strip.
+   */
+  .film-frame {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    padding-block: 14px;
+  }
+
+  .film-frame::before,
+  .film-frame::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    height: 6px;
+    background-image: radial-gradient(circle, var(--line-strong) 1.5px, transparent 1.6px);
+    background-size: 14px 6px;
+    background-position: 7px center;
+  }
+
+  .film-frame::before {
+    top: 4px;
+  }
+
+  .film-frame::after {
+    bottom: 4px;
+  }
+
+  /*
+   * media-chrome theming for the watch-page player. Control chrome sits on top of
+   * the video, so it stays dark glass in both themes; only the amber is ours.
+   */
+  .signal-player {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: #000000;
+
+    --media-primary-color: #efe9df;
+    --media-secondary-color: transparent;
+    --media-text-color: #efe9df;
+    --media-control-background: rgb(19 17 16 / 0.75);
+    --media-control-hover-background: rgb(247 169 40 / 0.25);
+    --media-range-thumb-background: var(--accent-solid);
+    --media-range-bar-color: var(--accent-solid);
+    --media-time-range-buffered-color: rgb(239 233 223 / 0.35);
+    --media-font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    --media-range-track-height: 3px;
+  }
+
+  .signal-player video {
+    width: 100%;
+    height: 100%;
+  }
+}
