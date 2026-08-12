@@ -1,5 +1,10 @@
 'use client';
 
+// The wrapper package imports this stylesheet from inside the dynamically imported
+// chunk, where the bundler drops it — Scalar then mounts completely unstyled
+// (issue #10). Importing it here puts it in the page's own CSS graph.
+import '@scalar/api-reference-react/style.css';
+
 import dynamic from 'next/dynamic';
 import { useTheme } from 'next-themes';
 
