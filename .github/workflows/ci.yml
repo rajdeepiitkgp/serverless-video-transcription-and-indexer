@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Job name "verify" is the required status check in the branch ruleset — keep stable.
   verify:
-    name: Lint · typecheck · test · build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
