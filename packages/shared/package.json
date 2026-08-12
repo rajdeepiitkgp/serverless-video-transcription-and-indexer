@@ -1,0 +1,35 @@
+{
+  "name": "@vidx/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared API contracts (zod → OpenAPI 3.1) and Video Indexer insight parsers",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "zod": "^4.4.3",
+    "zod-openapi": "^6.0.0"
+  },
+  "devDependencies": {
+    "@seriousme/openapi-schema-validator": "^2.9.1",
+    "@types/node": "^24.13.3",
+    "@vidx/config": "workspace:*",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.8.1",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

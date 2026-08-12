@@ -73,14 +73,14 @@ pnpm format      # prettier --write
 | Path                 | Contents                                    | Milestone |
 | -------------------- | ------------------------------------------- | --------- |
 | `packages/config`    | shared tsconfig/eslint/prettier presets     | **M0 ✅** |
-| `packages/shared`    | zod contracts → OpenAPI, VI insight parsers | M1        |
+| `packages/shared`    | zod contracts → OpenAPI, VI insight parsers | **M1 ✅** |
 | `services/pipeline`  | EG-triggered indexing pipeline + Discord    | M2        |
 | `services/webapi`    | HTTP API (SWA linked backend)               | M3        |
 | `apps/web`           | Next.js static export UI                    | M4        |
 | `infra/`             | Bicep modules                               | M5        |
 | `.github/workflows/` | `ci.yml` (M0); deploys + AI review          | M6        |
 
-Full milestone table: plan §13. **Current: M0 done; next up M1.**
+Full milestone table: plan §13. **Current: M1 done; next up M2.**
 
 ## Docs
 

@@ -1,0 +1,519 @@
+{
+  "partition": null,
+  "description": null,
+  "privacyMode": "Private",
+  "state": "Processed",
+  "accountId": "6f9f7c41-2f0e-4a8c-9c60-2b5b9f3f1a7d",
+  "id": "b3f1a2c4d5",
+  "name": "product-demo.mp4",
+  "userName": "Rajdeep Biswas",
+  "created": "2026-08-10T14:03:22.98+00:00",
+  "isOwned": true,
+  "isEditable": true,
+  "isBase": true,
+  "durationInSeconds": 127,
+  "duration": "0:02:07.04",
+  "summarizedInsights": {
+    "name": "product-demo.mp4",
+    "id": "b3f1a2c4d5",
+    "privacyMode": "Private",
+    "duration": {
+      "time": "0:02:07.04",
+      "seconds": 127.04
+    },
+    "thumbnailVideoId": "b3f1a2c4d5",
+    "thumbnailId": "9c2f6a1e-8f2b-4a6f-b1de-4a1b9c0d2e3f",
+    "faces": [],
+    "keywords": [
+      {
+        "isTranscript": true,
+        "id": 2,
+        "name": "product demo",
+        "appearances": [
+          {
+            "startTime": "0:00:01.2",
+            "endTime": "0:00:04.5",
+            "startSeconds": 1.2,
+            "endSeconds": 4.5
+          }
+        ]
+      }
+    ],
+    "sentiments": [
+      {
+        "sentimentKey": "Positive",
+        "seenDurationRatio": 0.42,
+        "appearances": [
+          {
+            "startTime": "0:00:01.2",
+            "endTime": "0:00:54.8",
+            "startSeconds": 1.2,
+            "endSeconds": 54.8
+          }
+        ]
+      }
+    ],
+    "emotions": [],
+    "labels": [],
+    "framePatterns": [],
+    "brands": [],
+    "namedLocations": [],
+    "namedPeople": [],
+    "statistics": {
+      "correspondenceCount": 0,
+      "speakerTalkToListenRatio": {
+        "1": 0.8,
+        "2": 0.2
+      },
+      "speakerLongestMonolog": {
+        "1": 40,
+        "2": 5
+      },
+      "speakerNumberOfFragments": {
+        "1": 4,
+        "2": 2
+      },
+      "speakerWordCount": {
+        "1": 130,
+        "2": 24
+      }
+    },
+    "topics": [
+      {
+        "referenceUrl": "https://en.wikipedia.org/wiki/Cloud_computing",
+        "iabName": "Technology & Computing",
+        "id": 1,
+        "name": "Cloud Computing",
+        "appearances": [
+          {
+            "startTime": "0:00:10",
+            "endTime": "0:01:00",
+            "startSeconds": 10,
+            "endSeconds": 60
+          }
+        ]
+      }
+    ]
+  },
+  "videos": [
+    {
+      "accountId": "6f9f7c41-2f0e-4a8c-9c60-2b5b9f3f1a7d",
+      "id": "b3f1a2c4d5",
+      "state": "Processed",
+      "moderationState": "OK",
+      "reviewState": "None",
+      "privacyMode": "Private",
+      "processingProgress": "100%",
+      "failureCode": "None",
+      "failureMessage": "",
+      "externalId": null,
+      "externalUrl": null,
+      "metadata": null,
+      "insights": {
+        "version": "1.0.0.0",
+        "duration": "0:02:07.04",
+        "sourceLanguage": "en-US",
+        "sourceLanguageConfidence": 0.94,
+        "language": "en-US",
+        "transcript": [
+          {
+            "id": 1,
+            "text": "Welcome to the product demo.",
+            "confidence": 0.95,
+            "speakerId": 1,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:01.2",
+                "adjustedEnd": "0:00:04.5",
+                "start": "0:00:01.2",
+                "end": "0:00:04.5"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "text": "Today we'll look at the cloud architecture.",
+            "confidence": 0.92,
+            "speakerId": 1,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:05.14",
+                "adjustedEnd": "0:00:09.8",
+                "start": "0:00:05.14",
+                "end": "0:00:09.8"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "text": "",
+            "confidence": 0,
+            "speakerId": null,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:10",
+                "adjustedEnd": "0:00:12.3",
+                "start": "0:00:10",
+                "end": "0:00:12.3"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "text": "  It indexes every upload automatically.  ",
+            "confidence": 0.9,
+            "speakerId": 2,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:12.3",
+                "adjustedEnd": "0:00:16.99",
+                "start": "0:00:12.3",
+                "end": "0:00:16.99"
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "text": "Ask questions any time.",
+            "confidence": 0.88,
+            "speakerId": 1,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:01:45.6",
+                "adjustedEnd": "0:01:49.02",
+                "start": "0:01:45.6",
+                "end": "0:01:49.02"
+              },
+              {
+                "adjustedStart": "0:02:01.15",
+                "adjustedEnd": "0:02:04",
+                "start": "0:02:01.15",
+                "end": "0:02:04"
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "text": "Thanks for watching.",
+            "confidence": 0.97,
+            "speakerId": 1,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:02:05",
+                "adjustedEnd": "0:02:07.04",
+                "start": "0:02:05",
+                "end": "0:02:07.04"
+              }
+            ]
+          }
+        ],
+        "ocr": [],
+        "keywords": [
+          {
+            "id": 1,
+            "text": "cloud architecture",
+            "confidence": 0.83,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:05.14",
+                "adjustedEnd": "0:00:09.8",
+                "start": "0:00:05.14",
+                "end": "0:00:09.8"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "text": "product demo",
+            "confidence": 0.91,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:01.2",
+                "adjustedEnd": "0:00:04.5",
+                "start": "0:00:01.2",
+                "end": "0:00:04.5"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "text": "serverless pipeline",
+            "confidence": 0.62,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:12.3",
+                "adjustedEnd": "0:00:16.99",
+                "start": "0:00:12.3",
+                "end": "0:00:16.99"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "text": "Cloud Architecture",
+            "confidence": 0.55,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:01:45.6",
+                "adjustedEnd": "0:01:49.02",
+                "start": "0:01:45.6",
+                "end": "0:01:49.02"
+              }
+            ]
+          }
+        ],
+        "topics": [
+          {
+            "id": 1,
+            "name": "Cloud Computing",
+            "referenceId": "Cloud_computing",
+            "referenceUrl": "https://en.wikipedia.org/wiki/Cloud_computing",
+            "referenceType": "Wikipedia",
+            "iptcName": null,
+            "iabName": "Technology & Computing",
+            "confidence": 0.88,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:10",
+                "adjustedEnd": "0:01:00",
+                "start": "0:00:10",
+                "end": "0:01:00"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "name": "Artificial Intelligence",
+            "referenceId": "Artificial_intelligence",
+            "referenceUrl": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+            "referenceType": "Wikipedia",
+            "iptcName": null,
+            "iabName": "Technology & Computing",
+            "confidence": 0.74,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:01:05",
+                "adjustedEnd": "0:02:00",
+                "start": "0:01:05",
+                "end": "0:02:00"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "name": "Product Demonstrations",
+            "referenceId": null,
+            "referenceUrl": null,
+            "referenceType": "VideoIndexer",
+            "iptcName": null,
+            "iabName": null,
+            "confidence": 0.69,
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:01:35",
+                "adjustedEnd": "0:02:07.04",
+                "start": "0:01:35",
+                "end": "0:02:07.04"
+              }
+            ]
+          }
+        ],
+        "labels": [
+          {
+            "id": 1,
+            "name": "screen",
+            "language": "en-US",
+            "instances": [
+              {
+                "adjustedStart": "0:00:00",
+                "adjustedEnd": "0:00:45.2",
+                "start": "0:00:00",
+                "end": "0:00:45.2"
+              }
+            ]
+          }
+        ],
+        "scenes": [
+          {
+            "id": 1,
+            "instances": [
+              {
+                "adjustedStart": "0:00:00",
+                "adjustedEnd": "0:00:45.2",
+                "start": "0:00:00",
+                "end": "0:00:45.2"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "instances": [
+              {
+                "adjustedStart": "0:00:45.2",
+                "adjustedEnd": "0:01:30",
+                "start": "0:00:45.2",
+                "end": "0:01:30"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "instances": [
+              {
+                "adjustedStart": "0:01:30",
+                "adjustedEnd": "0:02:07.04",
+                "start": "0:01:30",
+                "end": "0:02:07.04"
+              }
+            ]
+          }
+        ],
+        "shots": [
+          {
+            "id": 1,
+            "tags": ["static"],
+            "keyFrames": [
+              {
+                "id": 1,
+                "instances": [
+                  {
+                    "thumbnailId": "1a2b3c4d-0000-4000-8000-000000000001",
+                    "adjustedStart": "0:00:02",
+                    "adjustedEnd": "0:00:02.04",
+                    "start": "0:00:02",
+                    "end": "0:00:02.04"
+                  }
+                ]
+              }
+            ],
+            "instances": [
+              {
+                "adjustedStart": "0:00:00",
+                "adjustedEnd": "0:00:45.2",
+                "start": "0:00:00",
+                "end": "0:00:45.2"
+              }
+            ]
+          }
+        ],
+        "speakers": [
+          {
+            "id": 1,
+            "name": "Speaker #1",
+            "instances": [
+              {
+                "adjustedStart": "0:00:01.2",
+                "adjustedEnd": "0:00:09.8",
+                "start": "0:00:01.2",
+                "end": "0:00:09.8"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "name": "Speaker #2",
+            "instances": [
+              {
+                "adjustedStart": "0:00:12.3",
+                "adjustedEnd": "0:00:16.99",
+                "start": "0:00:12.3",
+                "end": "0:00:16.99"
+              }
+            ]
+          }
+        ],
+        "sentiments": [
+          {
+            "id": 1,
+            "averageScore": 0.81,
+            "sentimentType": "Positive",
+            "instances": [
+              {
+                "adjustedStart": "0:00:01.2",
+                "adjustedEnd": "0:00:54.8",
+                "start": "0:00:01.2",
+                "end": "0:00:54.8"
+              }
+            ]
+          }
+        ],
+        "blocks": [
+          {
+            "id": 1,
+            "instances": [
+              {
+                "adjustedStart": "0:00:00",
+                "adjustedEnd": "0:01:03.5",
+                "start": "0:00:00",
+                "end": "0:01:03.5"
+              }
+            ]
+          }
+        ],
+        "textualContentModeration": {
+          "id": 0,
+          "bannedWordsCount": 0,
+          "bannedWordsRatio": 0,
+          "instances": []
+        },
+        "statistics": {
+          "correspondenceCount": 0,
+          "speakerTalkToListenRatio": {
+            "1": 0.8,
+            "2": 0.2
+          },
+          "speakerLongestMonolog": {
+            "1": 40,
+            "2": 5
+          },
+          "speakerNumberOfFragments": {
+            "1": 4,
+            "2": 2
+          },
+          "speakerWordCount": {
+            "1": 130,
+            "2": 24
+          }
+        },
+        "thumbnailId": "9c2f6a1e-8f2b-4a6f-b1de-4a1b9c0d2e3f"
+      },
+      "thumbnailId": "9c2f6a1e-8f2b-4a6f-b1de-4a1b9c0d2e3f",
+      "detectSourceLanguage": false,
+      "languageAutoDetectMode": "None",
+      "sourceLanguage": "en-US",
+      "sourceLanguages": ["en-US"],
+      "language": "en-US",
+      "languages": ["en-US"],
+      "indexingPreset": "Default",
+      "streamingPreset": "NoStreaming",
+      "linguisticModelId": "00000000-0000-0000-0000-000000000000",
+      "personModelId": "00000000-0000-0000-0000-000000000000",
+      "isAdult": false,
+      "publishedUrl": null,
+      "publishedProxyUrl": null,
+      "viewToken": null
+    }
+  ],
+  "videosRanges": [
+    {
+      "videoId": "b3f1a2c4d5",
+      "range": {
+        "start": "0:00:00",
+        "end": "0:02:07.04"
+      }
+    }
+  ]
+}
