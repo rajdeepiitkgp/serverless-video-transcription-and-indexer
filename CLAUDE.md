@@ -44,6 +44,11 @@ pnpm format      # prettier --write
   adapters; in-memory fakes at ports — never mock SDKs mid-stack. 80% coverage gate on
   `services/*` + `packages/shared`; `core/` parsers ~100%.
 - **Conventional Commits** (commitlint via husky), trunk-based on `main`.
+- **New dependencies at latest** — verify with `npm view <pkg> version` before adding;
+  never hardcode a remembered version. Dependabot (weekly, grouped) keeps existing deps
+  and workflow actions current; security fixes arrive as PRs. Exceptions live as
+  `ignore` entries in `.github/dependabot.yml` (currently: TypeScript majors, until
+  typescript-eslint supports TS 7).
 
 ## Gotchas
 

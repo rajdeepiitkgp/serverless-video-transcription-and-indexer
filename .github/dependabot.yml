@@ -1,0 +1,35 @@
+# Weekly grouped dependency updates + immediate security-fix PRs.
+# Policy (CONTRIBUTING.md): new packages are added at latest; Dependabot keeps
+# existing ones current so upgrades stay small instead of becoming a big-bang refactor.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    versioning-strategy: increase
+    groups:
+      npm-dependencies:
+        patterns:
+          - '*'
+    labels:
+      - dependencies
+    ignore:
+      # typescript-eslint peers cap TypeScript at <6.1 — majors blocked until it
+      # supports TS 7 (then remove this entry). Minors/patches still flow.
+      - dependency-name: typescript
+        update-types:
+          - 'version-update:semver-major'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    labels:
+      - dependencies

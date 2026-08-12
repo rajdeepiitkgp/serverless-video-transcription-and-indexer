@@ -28,6 +28,19 @@ pnpm install
 - Deploys: automatic on `main`/`release/**` (path-filtered); manual dispatch elsewhere.
   Fork PRs never deploy and never see secrets.
 
+## Dependencies
+
+- **New packages are added at their latest version** — check the registry
+  (`npm view <pkg> version`) at add time; never copy a version from an old example or
+  tutorial. If latest can't be used, pin the newest workable version and record why in
+  the PR (and an `ignore` entry in `.github/dependabot.yml` if majors must be blocked).
+- **Dependabot** opens grouped weekly update PRs (npm + GitHub Actions) and immediate
+  security-fix PRs. Treat them as first-class: merge or explicitly rebut promptly —
+  letting them pile up recreates the big-bang-upgrade problem they exist to prevent.
+- Current deliberate exceptions: TypeScript stays `~6.0` until typescript-eslint
+  supports TS 7 (Dependabot ignores that major); Node stays 24 LTS to match the Azure
+  Functions runtime (repo-pinned, not a Dependabot concern).
+
 ## Quality bar
 
 - `pnpm lint && pnpm typecheck && pnpm test && pnpm build` must pass locally before
