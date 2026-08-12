@@ -74,6 +74,9 @@ pnpm replay --bundle <dir>  # re-run pipeline core on a diagnostics bundle (plan
   is deprecated; don't use it.
 - `.claude/skills/` holds vendored design skills (`frontend-design`, `ui-ux-pro-max`) —
   they drive the M4 UI work ("Signal" design language, plan §4).
+- The watch-page player is **media-chrome**, not Vidstack — the plan §14 evaluation
+  failed (stable Vidstack is React-18-only; its 1.x line is a perpetual prerelease) and
+  §14's fallback was exercised. See docs/adr/0001-media-chrome-instead-of-vidstack.md.
 - `services/pipeline` and `services/webapi` tests boot a throwaway **Azurite** on a
   random port (`tests/support/azurite-global-setup.ts` via vitest globalSetup, no
   Docker) for the blob-adapter integration tests;
