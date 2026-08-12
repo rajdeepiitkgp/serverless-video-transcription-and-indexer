@@ -12,8 +12,16 @@ pnpm install
 
 ## Branching & commits
 
+- **Never commit directly to `main` or `release/**`** — the husky pre-commit hook
+  blocks it locally, and GitHub rulesets reject direct pushes. All changes land via
+  **feature branch → PR → green CI → merge**.
 - **Trunk-based**: short-lived branches off `main`; `release/**` only for release cuts.
 - Branch names: `feat/…`, `fix/…`, `chore/…`, `docs/…`.
+- Flow: `git switch -c feat/<topic>` → commit → push → `gh pr create` → CI (`verify`)
+  must pass → merge. **Merged head branches are deleted automatically** (repo setting);
+  don't reuse them.
+- `main` and `release/*` are protected by ruleset: PRs required, `verify` status check
+  required, force pushes and deletion blocked.
 - **Conventional Commits**, enforced by commitlint on every commit:
   `feat(webapi): add search endpoint`, `fix(pipeline): retry VI token fetch`.
 - Pre-commit runs Prettier on staged files (lint-staged).

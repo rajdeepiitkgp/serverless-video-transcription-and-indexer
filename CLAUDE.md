@@ -44,6 +44,10 @@ pnpm format      # prettier --write
   adapters; in-memory fakes at ports — never mock SDKs mid-stack. 80% coverage gate on
   `services/*` + `packages/shared`; `core/` parsers ~100%.
 - **Conventional Commits** (commitlint via husky), trunk-based on `main`.
+- **Never commit on `main`/`release/*`** — husky blocks it locally and GitHub rulesets
+  reject direct pushes. Every change: `git switch -c <type>/<topic>` → commit → push →
+  PR → wait for the `verify` check → merge (head branch auto-deletes). Don't rename the
+  `verify` CI job — it's the required status check in the ruleset.
 - **New dependencies at latest** — verify with `npm view <pkg> version` before adding;
   never hardcode a remembered version. Dependabot (weekly, grouped) keeps existing deps
   and workflow actions current; security fixes arrive as PRs. Exceptions live as

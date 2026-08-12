@@ -1,1 +1,11 @@
+branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
+case "$branch" in
+  main | release/*)
+    echo "✖ Direct commits to '$branch' are not allowed." >&2
+    echo "  Create a feature branch and open a PR (see CONTRIBUTING.md):" >&2
+    echo "    git switch -c feat/<topic>" >&2
+    exit 1
+    ;;
+esac
+
 pnpm exec lint-staged
