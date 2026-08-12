@@ -1,6 +1,7 @@
 import { Play } from 'lucide-react';
 import { type Metadata } from 'next';
 
+import { Section } from '@/components/layout/section';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusChip } from '@/components/video/status-chip';
@@ -131,26 +132,6 @@ const DECK_LINES = [
   { time: '00:04:19', text: "We're locking it to the second week of October.", active: false },
   { time: '00:04:26', text: 'Marketing kicks off the teaser campaign next Monday.', active: false },
 ] as const;
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}): React.JSX.Element {
-  return (
-    <section aria-label={title} className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <h2 className="shrink-0 font-mono text-xs font-medium tracking-widest text-fg-muted">
-          {title}
-        </h2>
-        <div className="scanline flex-1" role="presentation" />
-      </div>
-      {children}
-    </section>
-  );
-}
 
 export default function DesignPage(): React.JSX.Element {
   return (

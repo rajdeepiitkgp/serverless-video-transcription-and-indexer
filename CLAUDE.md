@@ -27,6 +27,10 @@ pnpm build
 pnpm format      # prettier --write
 pnpm replay --bundle <dir>  # re-run pipeline core on a diagnostics bundle (plan §7);
                             # sample bundles: services/pipeline/fixtures/bundles/*
+pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI auth
+                 # emulator + /api proxy → Next dev (:3000) + webapi dev host (:7071 —
+                 # real handlers, in-memory stores, seeded library, simulated pipeline:
+                 # uploads index in ~10s, names containing "fail" fail; services/webapi/src/dev/)
 ```
 
 ## Non-negotiables

@@ -50,6 +50,20 @@
   --status-err: #be3d37;
 }
 
+/*
+ * Avatar fills — tape-label hues for the deterministic user chip (plan §4). Like the
+ * record light, they keep one value across themes; initials always use the dark ink
+ * (--accent-solid-fg), which holds ≥4.5:1 on every fill.
+ */
+:root {
+  --avatar-1: #d9a441;
+  --avatar-2: #8fb573;
+  --avatar-3: #6fa8c0;
+  --avatar-4: #cd8f7f;
+  --avatar-5: #a893c9;
+  --avatar-6: #9fb0bf;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
@@ -70,6 +84,12 @@
   --color-status-busy: var(--status-busy);
   --color-status-ok: var(--status-ok);
   --color-status-err: var(--status-err);
+  --color-avatar-1: var(--avatar-1);
+  --color-avatar-2: var(--avatar-2);
+  --color-avatar-3: var(--avatar-3);
+  --color-avatar-4: var(--avatar-4);
+  --color-avatar-5: var(--avatar-5);
+  --color-avatar-6: var(--avatar-6);
   --color-white: #ffffff;
   --color-black: #000000;
   --color-transparent: transparent;

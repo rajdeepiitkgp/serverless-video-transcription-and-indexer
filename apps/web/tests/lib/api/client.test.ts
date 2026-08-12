@@ -51,11 +51,11 @@ describe('fetchApi', () => {
   });
 
   it('wraps non-envelope failures without inventing a tracking id', async () => {
-    stubFetch(new Response('bad gateway', { status: 502 }));
+    stubFetch(new Response('missing', { status: 404 }));
     const failure = await fetchApi('/api/test', dataSchema).catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(ApiRequestError);
     const requestError = failure as ApiRequestError;
-    expect(requestError.code).toBe('http_502');
+    expect(requestError.code).toBe('http_404');
     expect(requestError.trackingId).toBeNull();
   });
 
@@ -64,6 +64,116 @@ describe('fetchApi', () => {
     const failure = await fetchApi('/api/test', dataSchema).catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(ApiRequestError);
     expect((failure as ApiRequestError).code).toBe('invalid_response');
+  });
+});
+
+describe('fetchApi retry (idempotent GETs only)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const settle = (promise: Promise<unknown>): Promise<unknown> =>
+    promise.catch((error: unknown) => error);
+
+  it('retries a 5xx GET and succeeds on a later attempt', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response('busy', { status: 503 }))
+      .mockResolvedValueOnce(jsonResponse({ data: { value: 'ok' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const promise = settle(fetchApi('/api/test', dataSchema));
+    await vi.advanceTimersByTimeAsync(10_000);
+    await expect(promise).resolves.toEqual({ value: 'ok' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a network failure and succeeds on a later attempt', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(jsonResponse({ data: { value: 'ok' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const promise = settle(fetchApi('/api/test', dataSchema));
+    await vi.advanceTimersByTimeAsync(10_000);
+    await expect(promise).resolves.toEqual({ value: 'ok' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('honors a Retry-After header before the next attempt', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response('slow down', { status: 429, headers: { 'retry-after': '3' } }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ data: { value: 'ok' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const promise = settle(fetchApi('/api/test', dataSchema));
+    await vi.advanceTimersByTimeAsync(2_900);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await expect(promise).resolves.toEqual({ value: 'ok' });
+  });
+
+  it('gives up after two retries', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn<typeof fetch>(() =>
+      Promise.resolve(new Response('busy', { status: 503 })),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const promise = settle(fetchApi('/api/test', dataSchema));
+    await vi.advanceTimersByTimeAsync(30_000);
+    const failure = await promise;
+    expect(failure).toBeInstanceOf(ApiRequestError);
+    expect((failure as ApiRequestError).code).toBe('http_503');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not retry a 400 GET', async () => {
+    const fetchMock = stubFetch(new Response('bad request', { status: 400 }));
+    const failure = await fetchApi('/api/test', dataSchema).catch((error: unknown) => error);
+    expect((failure as ApiRequestError).code).toBe('http_400');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('never retries POST or DELETE, even on 5xx', async () => {
+    const fetchMock = stubFetch(new Response('busy', { status: 503 }));
+    await fetchApi('/api/uploads', dataSchema, { method: 'POST', body: {} }).catch(() => undefined);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await fetchApi('/api/videos/x', dataSchema, { method: 'DELETE' }).catch(() => undefined);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops retrying once the caller aborts', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response('busy', { status: 503 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const promise = settle(fetchApi('/api/test', dataSchema, { signal: controller.signal }));
+    await vi.advanceTimersByTimeAsync(0);
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(30_000);
+    await promise;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('serializes a JSON body for POST', async () => {
+    const fetchMock = stubFetch(jsonResponse({ data: { value: 'ok' } }, 201));
+    await fetchApi('/api/uploads', dataSchema, { method: 'POST', body: { fileName: 'a.mp4' } });
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(init?.method).toBe('POST');
+    expect(init?.headers).toMatchObject({ 'content-type': 'application/json' });
+    expect(init?.body).toBe(JSON.stringify({ fileName: 'a.mp4' }));
   });
 });
 

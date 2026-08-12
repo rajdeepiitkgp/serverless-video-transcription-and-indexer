@@ -3,6 +3,13 @@ packages:
   - services/*
   - packages/*
 
+# Neither dependency needs its install script: keytar (via SWA CLI) only backs
+# `swa login` credential storage, and vue-demi's postinstall merely swaps in Vue-2
+# entry files — Scalar runs on the shipped Vue-3 defaults.
+allowBuilds:
+  keytar: false
+  vue-demi: false
+
 engineStrict: true
 
 minimumReleaseAgeExclude:

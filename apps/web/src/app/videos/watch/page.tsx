@@ -47,7 +47,13 @@ function WatchPageContent(): React.JSX.Element {
     case 'loading':
       return <LoadingPanel label="Loading video" />;
     case 'error':
-      return <ErrorPanel title="Couldn't load this video" error={detailState.error} />;
+      return (
+        <ErrorPanel
+          title="Couldn't load this video"
+          error={detailState.error}
+          onRetry={detailState.refetch}
+        />
+      );
     case 'success':
       return (
         <WatchView
