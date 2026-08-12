@@ -4,3 +4,9 @@ packages:
   - packages/*
 
 engineStrict: true
+
+# uuid <14 is flagged by GHSA-w5hq-g745-h8pq and only reachable via
+# azurite -> @azure/ms-rest-js / sequelize, which pin uuid@^8 (dev-only).
+# Safe on Node 24 (require(esm)); drop when azurite's deps move to uuid >=14.
+overrides:
+  uuid: ^14.0.1
