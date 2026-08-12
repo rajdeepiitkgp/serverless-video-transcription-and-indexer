@@ -1,0 +1,23 @@
+{
+  "id": "demo-0002",
+  "videoId": "f41l3d0001",
+  "schemaVersion": 1,
+  "name": "corrupt-upload.mp4",
+  "blobPath": "videos/demo-0002/corrupt-upload.mp4",
+  "playable": true,
+  "status": "Indexing",
+  "uploadedBy": {
+    "userId": "u-1002",
+    "userDetails": "tester1@example.com"
+  },
+  "keywords": [],
+  "topics": [],
+  "transcript": [],
+  "chapters": [],
+  "resultsPrefix": "results/demo-0002/",
+  "trackingIds": {
+    "upload": "VXT-2b3c4d5e"
+  },
+  "submittedAt": "2026-08-11T19:44:03.000Z",
+  "error": null
+}
