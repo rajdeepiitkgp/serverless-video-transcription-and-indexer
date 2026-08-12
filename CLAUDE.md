@@ -70,9 +70,13 @@ pnpm replay --bundle <dir>  # re-run pipeline core on a diagnostics bundle (plan
   is deprecated; don't use it.
 - `.claude/skills/` holds vendored design skills (`frontend-design`, `ui-ux-pro-max`) —
   they drive the M4 UI work ("Signal" design language, plan §4).
-- `services/pipeline` tests boot a throwaway **Azurite** on a random port (vitest
-  globalSetup, no Docker) for the blob-adapter integration tests; VI/Discord/Event Grid
-  adapters test against local HTTP stubs. All part of plain `pnpm test`.
+- `services/pipeline` and `services/webapi` tests boot a throwaway **Azurite** on a
+  random port (vitest globalSetup, no Docker) for the blob-adapter integration tests;
+  VI/Discord/Event Grid adapters test against local HTTP stubs; Cosmos adapters against
+  SDK-shaped stubs (emulator optional/nightly). All part of plain `pnpm test`.
+- webapi authn is **parsing `x-ms-client-principal`** (trustworthy only because Easy
+  Auth locks the app to SWA traffic); `GET /api/health` is the single anonymous route —
+  the carve-out itself lands in `staticwebapp.config.json` (M4).
 - VI ARM api-version defaults to `2024-01-01`; override via `VI_ARM_API_VERSION` app
   setting if ARM drifts (plan §14 risk). Live verification pends the M5 deploy.
 
@@ -83,12 +87,12 @@ pnpm replay --bundle <dir>  # re-run pipeline core on a diagnostics bundle (plan
 | `packages/config`    | shared tsconfig/eslint/prettier presets     | **M0 ✅** |
 | `packages/shared`    | zod contracts → OpenAPI, VI insight parsers | **M1 ✅** |
 | `services/pipeline`  | EG-triggered indexing pipeline + Discord    | **M2 ✅** |
-| `services/webapi`    | HTTP API (SWA linked backend)               | M3        |
+| `services/webapi`    | HTTP API (SWA linked backend)               | **M3 ✅** |
 | `apps/web`           | Next.js static export UI                    | M4        |
 | `infra/`             | Bicep modules                               | M5        |
 | `.github/workflows/` | `ci.yml` (M0); deploys + AI review          | M6        |
 
-Full milestone table: plan §13. **Current: M2 done; next up M3.**
+Full milestone table: plan §13. **Current: M3 done; next up M4.**
 
 ## Docs
 
