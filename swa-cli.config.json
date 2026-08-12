@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/@azure/static-web-apps-cli/schema/swa-cli.config.schema.json",
+  "configurations": {
+    "signal": {
+      "appDevserverUrl": "http://localhost:3000",
+      "apiDevserverUrl": "http://127.0.0.1:7071",
+      "swaConfigLocation": "apps/web",
+      "port": 4280
+    }
+  }
+}

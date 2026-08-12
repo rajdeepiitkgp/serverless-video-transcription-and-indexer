@@ -1,15 +1,19 @@
+import { Button } from '@/components/ui/button';
 import { type ApiRequestError } from '@/lib/api/client';
 
 /**
  * Error surface for failed queries. Always shows the tracking ID when the API sent
- * one — "quote VXT-… to support" is the whole support loop (plan §6).
+ * one — "quote VXT-… to support" is the whole support loop (plan §6) — and offers
+ * a retry so an error state is never a dead end.
  */
 export function ErrorPanel({
   title,
   error,
+  onRetry,
 }: {
   title: string;
   error: ApiRequestError;
+  onRetry?: () => void;
 }): React.JSX.Element {
   return (
     <div
@@ -25,6 +29,13 @@ export function ErrorPanel({
             {error.trackingId}
           </code>
         </p>
+      )}
+      {onRetry !== undefined && (
+        <div className="mt-2">
+          <Button variant="secondary" size="sm" onClick={onRetry}>
+            Try again
+          </Button>
+        </div>
       )}
     </div>
   );

@@ -5,6 +5,8 @@ import { defineConfig } from 'vitest/config';
 // - src/functions/**: route registrations that run at Functions-host import time.
 // - src/app/composition-root.ts: constructs real Azure SDK clients from managed
 //   identity; exercised by deploy + the M7 smoke test, not unit-testable offline.
+// - src/dev/**: the local dev host behind `pnpm dev` (plan §11) — a manual harness
+//   over the already-tested handlers, never deployed.
 // eslint-disable-next-line no-restricted-syntax -- Vitest requires a default export
 export default defineConfig({
   test: {
@@ -13,7 +15,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/functions/**', 'src/app/composition-root.ts'],
+      exclude: ['src/functions/**', 'src/app/composition-root.ts', 'src/dev/**'],
       thresholds: {
         lines: 80,
         branches: 80,

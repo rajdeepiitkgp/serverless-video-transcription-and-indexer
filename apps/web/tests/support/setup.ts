@@ -24,3 +24,8 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 Element.prototype.scrollIntoView = () => undefined;
+
+// Radix menus/dialogs probe the Pointer Events capture API, which jsdom lacks.
+Element.prototype.hasPointerCapture = () => false;
+Element.prototype.setPointerCapture = () => undefined;
+Element.prototype.releasePointerCapture = () => undefined;

@@ -35,6 +35,109 @@ export function toApiRequestError(error: unknown): ApiRequestError {
   return new ApiRequestError({ code: 'network', message, trackingId: null, status: 0 });
 }
 
+/** One-line error text with the support ID when present, for toasts and list rows. */
+export function describeApiError(cause: unknown): string {
+  const error = toApiRequestError(cause);
+  return error.trackingId === null
+    ? error.message
+    : `${error.message} (support ID ${error.trackingId})`;
+}
+
+export interface FetchApiInit {
+  /**
+   * Defaults to GET. POST/DELETE calls are never retried: `POST /api/uploads`
+   * creates a document + SAS per call (a retry would orphan documents), and DELETE
+   * must run exactly as often as the user asked.
+   */
+  method?: 'GET' | 'POST' | 'DELETE';
+  /** JSON-serialized request body. */
+  body?: unknown;
+  signal?: AbortSignal;
+}
+
+/**
+ * Bounded retry for idempotent GETs only: transient faults (network failures,
+ * 408/429/5xx) get 2 retries with exponential backoff + jitter, honoring a
+ * `Retry-After` header when the server sends one.
+ */
+const MAX_RETRIES = 2;
+const BASE_DELAY_MS = 400;
+const MAX_DELAY_MS = 10_000;
+
+const isRetryableStatus = (status: number): boolean =>
+  status === 408 || status === 429 || status >= 500;
+
+function retryDelayMs(attempt: number, retryAfter: string | null): number {
+  if (retryAfter !== null) {
+    const seconds = Number.parseFloat(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return Math.min(seconds * 1000, MAX_DELAY_MS);
+    }
+    const at = Date.parse(retryAfter);
+    if (!Number.isNaN(at)) {
+      return Math.min(Math.max(0, at - Date.now()), MAX_DELAY_MS);
+    }
+  }
+  const backoff = BASE_DELAY_MS * 2 ** attempt;
+  // Full backoff plus up to 50% jitter so simultaneous tabs don't retry in lockstep.
+  return backoff + Math.random() * backoff * 0.5;
+}
+
+function abortReason(signal: AbortSignal | undefined): Error {
+  const reason: unknown = signal?.reason;
+  return reason instanceof Error ? reason : new Error('The request was aborted.');
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted === true) {
+      reject(abortReason(signal));
+      return;
+    }
+    const onAbort = (): void => {
+      clearTimeout(timer);
+      reject(abortReason(signal));
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+async function fetchWithRetry(path: string, init: FetchApiInit | undefined): Promise<Response> {
+  const method = init?.method ?? 'GET';
+  const request: RequestInit = {
+    method,
+    headers: {
+      accept: 'application/json',
+      ...(init?.body === undefined ? {} : { 'content-type': 'application/json' }),
+    },
+    ...(init?.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+    ...(init?.signal === undefined ? {} : { signal: init.signal }),
+  };
+
+  for (let attempt = 0; ; attempt += 1) {
+    const retriesLeft = method === 'GET' && attempt < MAX_RETRIES;
+    let response: Response;
+    try {
+      response = await fetch(path, request);
+    } catch (error) {
+      if (!retriesLeft || init?.signal?.aborted === true) {
+        throw error;
+      }
+      await sleep(retryDelayMs(attempt, null), init?.signal);
+      continue;
+    }
+    if (!response.ok && retriesLeft && isRetryableStatus(response.status)) {
+      await sleep(retryDelayMs(attempt, response.headers.get('retry-after')), init?.signal);
+      continue;
+    }
+    return response;
+  }
+}
+
 /**
  * Fetches an API route and validates the `{ data: … }` envelope against the shared
  * zod contract. All server data flows through here (docs/style-guide.md): components
@@ -43,12 +146,9 @@ export function toApiRequestError(error: unknown): ApiRequestError {
 export async function fetchApi<T extends z.ZodType>(
   path: string,
   dataSchema: T,
-  init?: { signal?: AbortSignal },
+  init?: FetchApiInit,
 ): Promise<z.output<T>> {
-  const response = await fetch(path, {
-    headers: { accept: 'application/json' },
-    ...(init?.signal === undefined ? {} : { signal: init.signal }),
-  });
+  const response = await fetchWithRetry(path, init);
   const body: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
