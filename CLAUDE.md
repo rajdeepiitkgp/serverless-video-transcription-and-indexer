@@ -4,6 +4,10 @@ Operational context for agent sessions. This is **not** a copy of the plan — t
 contract for the build is [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) (v5). Read the
 relevant section before building anything; do not deviate from it silently.
 
+**The plan is frozen** (as is `requirement.md`): both are read-only contract documents,
+enforced by deny rules in `.claude/settings.json`. Corrections or scope changes are
+recorded as ADRs in `docs/adr/` referencing the section they amend — never edits.
+
 ## What this is
 
 Event-driven serverless video pipeline on Azure: browser upload → Blob Storage →

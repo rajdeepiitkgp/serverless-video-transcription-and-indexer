@@ -1,6 +1,8 @@
 # Implementation Plan — Serverless Video Transcription & Indexer
 
-> Status: **v5 — updated after review round 4; awaiting final approval**
+> Status: **v5 — APPROVED & FROZEN (2026-08-12). This document is the build contract and
+> is now read-only; do not edit it. Corrections or scope changes go to ADRs in
+> docs/adr/ (referencing the section they amend), never into this file.**
 > Source requirement: [requirement.md](requirement.md)
 > Last updated: 2026-08-12
 >
