@@ -172,11 +172,17 @@ the host-runtime API + syncing triggers on success. #5: green through BOTH
 infra phases + all code deploys (host-runtime assert validated live); smoke
 failed only generating its test clip — ubuntu-latest runner images no longer
 ship ffmpeg (22.04 had it, 24.04+ dropped it) — deploy-all now apt-installs it
-first. AI review is now opt-in via the `ai-review` PR label or `@claude`
-comment (ADR-0004 — API-credit cost). Remaining owner steps: merge the fix
-PR → run Deploy all (closes M5 live acceptance). Watch item: /api/health
-availability probes log cosmos+storage probe timeouts (2s budget) — may be
-MI-token latency; check after the next deploy. M4 `pnpm dev` acceptance pass still pending. Browser App Insights
+first. #6: every job green except smoke, whose FIRST health probe got a 503 —
+fired ~60s after the webapi-after-phase-2 restart, before the SWA→backend path
+settled (App Insights logged NO GetHealth request for it — the 503 came from in
+front of the function; the endpoint answered 200 moments later). smoke-test.ts
+now retries the health gate (SMOKE_HEALTH_RETRY_MINUTES, default 5) and starts
+the pipeline-poll window after upload, not at process start. AI review is now
+opt-in via the `ai-review` PR label or `@claude` comment (ADR-0004 — API-credit
+cost). Remaining owner steps: merge the fix PR → run Deploy all (closes M5 live
+acceptance). Watch item (NOT what bit run #6): /api/health availability probes
+log cosmos+storage probe timeouts (2s budget) — may be MI-token latency; check
+if smoke reports degraded. M4 `pnpm dev` acceptance pass still pending. Browser App Insights
 telemetry (plan §6) not yet wired in apps/web — flagged for M7 hardening.**
 
 ## Docs
