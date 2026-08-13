@@ -48,8 +48,11 @@ Contributor** — dead-letter writes need nothing more.
 
 ## Consequences
 
-- Still zero data-plane secrets; only the role breadth changes, scoped to the one
-  storage account.
+- Still zero data-plane secrets. The role breadth does widen meaningfully: Blob Data
+  Owner adds container-delete and blob-ACL/ownership actions over the shared media
+  account, beyond the read/write/delete-blob surface Contributor already granted.
+  Accepted: both identities are the trusted data-plane of this stack by design, and
+  the ACL actions are inert on this flat-namespace account (`isHnsEnabled` unset).
 - The apps' Bicep-created Blob Data Contributor assignments are superseded but not
   deleted (incremental deployments don't remove resources); they are harmless.
 - The three role assignments created ad hoc during the 2026-08-13 incident would

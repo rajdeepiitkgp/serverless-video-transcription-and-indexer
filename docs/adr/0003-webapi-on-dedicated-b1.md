@@ -60,10 +60,16 @@ delete/recreate-safe contract exists to support.
 
 ## Consequences
 
-- ~$13/month for the B1 plan; in exchange the API has no cold starts. The default
-  monthly budget rises 10 → 25 USD to match (`BUDGET_AMOUNT`; the owner must also
-  raise the GitHub `BUDGET_AMOUNT` variable if it's set to the old value, or the
-  100%-actual and forecast alerts fire permanently).
+- ~$13/month for the B1 plan; in exchange the API has no cold starts. Idle fixed
+  cost for the stack becomes ~$22/month (B1 + the ~$9 SWA Standard fee already
+  present), so the default monthly budget rises 10 → **50** USD — the smallest
+  round value that keeps idle spend under the 50% notification threshold in
+  `budget.bicep`. The owner must update the GitHub `BUDGET_AMOUNT` variable to
+  match (it overrides the default; `docs/setup.md` seeds it).
+- B1 is a single fixed instance — webapi loses Consumption's event-driven HTTP
+  scale-out. Acceptable: the SWA serves all static traffic, the API is thin I/O
+  over Cosmos/Blob, and `numberOfWorkers` can be raised (or the plan scaled up)
+  without an ADR if it ever saturates.
 - Deploys use the standard zipdeploy path; the M6 caveat about re-created
   `WEBSITE_RUN_FROM_PACKAGE` app settings no longer applies to webapi, but
   `deploy-all` keeps the webapi re-deploy after infra phase 2 as cheap insurance.

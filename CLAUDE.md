@@ -148,9 +148,10 @@ config done. First Deploy all (2026-08-13) failed at webapi — root cause: no N
 image on Y1 Linux (ADR-0003), plus under-scoped host-storage roles (ADR-0002); fix =
 webapi on Dedicated B1. Remaining owner steps: run Destroy **before** merging (the
 merge auto-fires deploy-infra, and Y1→B1 can't convert in place; destroy also clears
-the incident's ad-hoc role assignments) → merge the fix PR → check the GitHub
-`BUDGET_AMOUNT` variable is ≥ 25 → run Deploy all (closes M5 live acceptance). M4 `pnpm dev` acceptance pass
-still pending. Browser App Insights telemetry (plan §6) not yet wired in apps/web —
+the incident's ad-hoc role assignments) → merge the fix PR → update the GitHub
+`BUDGET_AMOUNT` variable to 50 (idle fixed cost is ~$22/mo: B1 ~$13 + SWA Standard
+~$9 — a lower budget spams threshold alerts) → run Deploy all (closes M5 live
+acceptance). M4 `pnpm dev` acceptance pass still pending. Browser App Insights telemetry (plan §6) not yet wired in apps/web —
 flagged for M7 hardening.**
 
 ## Docs
