@@ -12,6 +12,12 @@ allowBuilds:
 
 engineStrict: true
 
+# Workspace deps are hard-linked copies, not symlinks — required by `pnpm deploy`
+# (pnpm >=10), which assembles the standalone function-app artifacts in the deploy
+# workflows. Caveat: after adding a NEW file to packages/shared, run `pnpm install`
+# so consumers' injected copies pick it up (in-place rebuilds propagate on their own).
+injectWorkspacePackages: true
+
 minimumReleaseAgeExclude:
   - '@testing-library/user-event@14.6.4'
 

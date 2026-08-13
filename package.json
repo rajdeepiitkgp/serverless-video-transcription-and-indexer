@@ -2,6 +2,7 @@
   "name": "serverless-video-transcription-and-indexer",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@11.21.0",
   "engines": {
     "node": "24.x",
@@ -16,6 +17,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "replay": "turbo run build --filter=@vidx/pipeline && pnpm --filter @vidx/pipeline replay",
+    "smoke": "node scripts/smoke-test.ts",
+    "diagnostics": "node scripts/download-diagnostics.ts",
     "format": "prettier --write .",
     "prepare": "husky"
   },
@@ -23,7 +26,10 @@
     "*": "prettier --write --ignore-unknown"
   },
   "devDependencies": {
+    "@azure/cosmos": "^4.10.0",
+    "@azure/identity": "^4.13.1",
     "@azure/static-web-apps-cli": "^2.0.10",
+    "@azure/storage-blob": "^12.33.0",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@vidx/config": "workspace:*",

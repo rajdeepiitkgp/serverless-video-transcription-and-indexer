@@ -1,0 +1,93 @@
+name: Deploy all
+
+# Plan §9: manual full-stack deploy — infra phase 1 → webapi + pipeline + web →
+# infra phase 2 (Event Grid subscriptions + keyed VI callback) → smoke test.
+# webapi code is re-deployed after phase 2 because the infra run re-PUTs app
+# settings from Bicep, which wipes anything the functions deploy set out-of-band
+# (e.g. WEBSITE_RUN_FROM_PACKAGE on the Y1 plan) — see the CLAUDE.md gotcha.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write # deploy-infra.yml declares it; unused outside PRs
+
+concurrency:
+  group: deploy-all
+  cancel-in-progress: false
+
+jobs:
+  infra-phase-1:
+    uses: ./.github/workflows/deploy-infra.yml
+    with:
+      require_event_subscriptions: false
+    secrets: inherit
+
+  webapi:
+    needs: infra-phase-1
+    uses: ./.github/workflows/deploy-webapi.yml
+    secrets: inherit
+
+  pipeline:
+    needs: infra-phase-1
+    uses: ./.github/workflows/deploy-pipeline.yml
+    secrets: inherit
+
+  web:
+    needs: infra-phase-1
+    uses: ./.github/workflows/deploy-web.yml
+    secrets: inherit
+
+  infra-phase-2:
+    needs: [webapi, pipeline]
+    uses: ./.github/workflows/deploy-infra.yml
+    with:
+      require_event_subscriptions: true
+    secrets: inherit
+
+  webapi-after-phase-2:
+    needs: infra-phase-2
+    uses: ./.github/workflows/deploy-webapi.yml
+    secrets: inherit
+
+  smoke:
+    needs: [webapi-after-phase-2, web, infra-phase-2]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Generate sample clip
+        run: |
+          ffmpeg -f lavfi -i "testsrc=duration=4:size=320x240:rate=15" \
+            -f lavfi -i "sine=frequency=440:duration=4" \
+            -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest \
+            -y -loglevel error "$RUNNER_TEMP/smoke.mp4"
+
+      - name: Run smoke test
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          export SMOKE_STORAGE_ACCOUNT="$(az storage account list \
+            --resource-group "$AZURE_RESOURCE_GROUP" --query '[0].name' --output tsv)"
+          export SMOKE_SWA_HOSTNAME="$(az staticwebapp list \
+            --resource-group "$AZURE_RESOURCE_GROUP" --query '[0].defaultHostname' --output tsv)"
+          export SMOKE_VIDEO_FILE="$RUNNER_TEMP/smoke.mp4"
+          pnpm smoke

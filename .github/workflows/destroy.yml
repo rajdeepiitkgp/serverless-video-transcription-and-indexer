@@ -1,0 +1,48 @@
+name: Destroy
+
+# Plan §8: manual dispatch + typed confirmation → `az group delete`. Everything —
+# including monitoring and the budget — lives in the RG, so this is the whole
+# teardown; recreate with deploy-all (docs/teardown-recreate.md). The OIDC app
+# registration is subscription-level and survives.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type the resource group name to confirm destruction
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: destroy
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Verify confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          if [[ "$CONFIRM" != "$AZURE_RESOURCE_GROUP" ]]; then
+            echo "::error::Confirmation '$CONFIRM' does not match the resource group '$AZURE_RESOURCE_GROUP' — aborting."
+            exit 1
+          fi
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Delete resource group
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: az group delete --name "$AZURE_RESOURCE_GROUP" --yes
