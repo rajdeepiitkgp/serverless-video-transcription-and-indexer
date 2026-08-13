@@ -97,5 +97,7 @@ jobs:
             --resource-group "$AZURE_RESOURCE_GROUP" --query '[0].name' --output tsv)"
           export SMOKE_SWA_HOSTNAME="$(az staticwebapp list \
             --resource-group "$AZURE_RESOURCE_GROUP" --query '[0].defaultHostname' --output tsv)"
+          export SMOKE_COSMOS_ENDPOINT="$(az cosmosdb list \
+            --resource-group "$AZURE_RESOURCE_GROUP" --query '[0].documentEndpoint' --output tsv)"
           export SMOKE_VIDEO_FILE="$RUNNER_TEMP/smoke.mp4"
           pnpm smoke

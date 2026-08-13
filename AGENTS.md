@@ -164,9 +164,13 @@ only generating its test clip — ubuntu-latest runners no longer ship ffmpeg �
 deploy-all now apt-installs it first. #6: smoke's first health probe hit the
 SWA→backend path ~60s after the webapi re-deploy restart and got a transient
 503 (the request never reached the function) — smoke-test.ts now retries the
-health gate for up to 5 min. AI review is now opt-in via the `ai-review` PR
-label or `@claude` comment (ADR-0004). Remaining: merge fix PR → Deploy all.
-M4 `pnpm dev` acceptance pass still pending.**
+health gate for up to 5 min. #7: the pipeline correctly ignored smoke's direct
+upload (no metadata document — plan §9 vs §2 contradiction); ADR-0005: smoke
+now seeds the API's `Uploaded` Cosmos document first, deploy principal gets
+Cosmos Data Contributor via `deployer()` in rbac.bicep. AI review is now
+opt-in via the `ai-review` PR label or `@claude` comment (ADR-0004).
+Remaining: merge fix PR → Deploy all. M4 `pnpm dev` acceptance pass still
+pending.**
 
 ## Docs
 

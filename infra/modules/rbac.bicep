@@ -150,6 +150,20 @@ resource pipelineCosmosRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssign
   dependsOn: [webApiCosmosRole]
 }
 
+// The deploying principal seeds the smoke test's metadata document (ADR-0005) —
+// in CI, deployer() is the OIDC principal that also runs `pnpm smoke`. Lives here
+// rather than bootstrap because sqlRoleAssignments die with the account on destroy.
+resource deployerCosmosRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2024-11-15' = {
+  parent: cosmosAccount
+  name: guid(cosmosAccount.id, deployer().objectId, 'data-contributor')
+  properties: {
+    principalId: deployer().objectId
+    roleDefinitionId: cosmosDataContributorDefinitionId
+    scope: cosmosAccount.id
+  }
+  dependsOn: [pipelineCosmosRole]
+}
+
 // --- Event Grid: pipeline publishes to the custom topic with its identity ---
 
 resource pipelineTopicSender 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
