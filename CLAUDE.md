@@ -95,9 +95,14 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   (less critical since webapi moved to B1/zipdeploy — ADR-0003 — but kept as
   insurance).
 - Function-app deploy artifacts are assembled with `pnpm --filter <pkg> deploy --prod
-  <dir>`, which requires `injectWorkspacePackages: true` (pnpm-workspace.yaml):
-  workspace deps are hard-linked copies, so `@vidx/shared` + its deps materialize
-  into the artifact instead of leaving dangling symlinks (`--legacy` mode silently
+--config.node-linker=hoisted <dir>`. Hoisted is mandatory: pnpm's default layout
+  symlinks `node_modules` entries into `node_modules/.pnpm`, and those links do not
+  survive the functions-action zip → server-side extract — the deploy reports
+  success but the host loads **zero functions** (bit both apps on the second Deploy
+  all, 2026-08-13; the workflows now verify the artifact — no symlinks outside
+  `.bin`, every `dist/functions/*.js` imports). `injectWorkspacePackages: true`
+  (pnpm-workspace.yaml) stays required: workspace deps are hard-linked copies, so
+  `@vidx/shared` + its deps materialize into the artifact (`--legacy` mode silently
   drops shared's own dependencies — zod-openapi — from the artifact; don't use it).
   Injection caveat: after adding a NEW file to packages/shared, run `pnpm install` so
   consumers' copies refresh. Each service's package.json `files` field (`dist` +
@@ -144,15 +149,17 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 | `.github/workflows/` | `ci.yml` + reports (M0/M6); deploys, destroy, AI review     | **M6 ✅** |
 
 Full milestone table: plan §13. **Current: M6 code complete; bootstrap + GitHub
-config done. First Deploy all (2026-08-13) failed at webapi — root cause: no Node 24
-image on Y1 Linux (ADR-0003), plus under-scoped host-storage roles (ADR-0002); fix =
-webapi on Dedicated B1. Destroy ran 2026-08-13 (before merge — required: the merge
-auto-fires deploy-infra and Y1→B1 can't convert in place; it also cleared the
-incident's ad-hoc role assignments) and `BUDGET_AMOUNT` is set to 50 (idle fixed
-cost is ~$22/mo: B1 ~$13 + SWA Standard ~$9; `@minValue(50)` guards regressions).
-Remaining owner steps: merge the fix PR → run Deploy all (closes M5 live
-acceptance). M4 `pnpm dev` acceptance pass still pending. Browser App Insights telemetry (plan §6) not yet wired in apps/web —
-flagged for M7 hardening.**
+config done. First Deploy all (2026-08-13) failed at webapi — no Node 24 image on
+Y1 Linux; webapi moved to Dedicated B1 (ADR-0003), host-storage roles widened
+(ADR-0002), destroy + recreate, `BUDGET_AMOUNT` 50 (idle fixed cost ~$22/mo: B1
+~$13 + SWA Standard ~$9; `@minValue(50)` guards regressions). Second Deploy all
+(2026-08-13, post-merge): every code deploy green — B1 fix validated — but infra
+phase 2 failed: both function hosts loaded zero functions because pnpm-symlinked
+artifacts don't survive zip deploy (see the artifact gotcha; fixed with hoisted
+artifacts + a standalone-verify step in the deploy workflows). Remaining owner
+steps: merge the fix PR → run Deploy all (closes M5 live acceptance). M4 `pnpm dev`
+acceptance pass still pending. Browser App Insights telemetry (plan §6) not yet
+wired in apps/web — flagged for M7 hardening.**
 
 ## Docs
 

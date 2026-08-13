@@ -91,9 +91,14 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   (less critical since webapi moved to B1/zipdeploy — ADR-0003 — but kept as
   insurance).
 - Function-app deploy artifacts are assembled with `pnpm --filter <pkg> deploy --prod
-  <dir>`, which requires `injectWorkspacePackages: true` (pnpm-workspace.yaml):
-  workspace deps are hard-linked copies, so `@vidx/shared` + its deps materialize
-  into the artifact instead of leaving dangling symlinks (`--legacy` mode silently
+--config.node-linker=hoisted <dir>`. Hoisted is mandatory: pnpm's default layout
+  symlinks `node_modules` entries into `node_modules/.pnpm`, and those links do not
+  survive the functions-action zip → server-side extract — the deploy reports
+  success but the host loads **zero functions** (bit both apps on the second Deploy
+  all, 2026-08-13; the workflows now verify the artifact — no symlinks outside
+  `.bin`, every `dist/functions/*.js` imports). `injectWorkspacePackages: true`
+  (pnpm-workspace.yaml) stays required: workspace deps are hard-linked copies, so
+  `@vidx/shared` + its deps materialize into the artifact (`--legacy` mode silently
   drops shared's own dependencies — zod-openapi — from the artifact; don't use it).
   Injection caveat: after adding a NEW file to packages/shared, run `pnpm install` so
   consumers' copies refresh. Each service's package.json `files` field (`dist` +
@@ -139,9 +144,11 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 
 Full milestone table: plan §13. **Current: M6 code complete; first Deploy all
 (2026-08-13) failed at webapi — no Node 24 image on Y1 Linux (ADR-0003) — fixed by
-moving webapi to Dedicated B1. Destroy ran and `BUDGET_AMOUNT` is set to 50
-(2026-08-13); remaining: merge fix PR → Deploy all. M4 `pnpm dev` acceptance pass
-still pending.**
+moving webapi to Dedicated B1. Second Deploy all (2026-08-13): code deploys green,
+but both function hosts loaded zero functions — pnpm-symlinked artifacts don't
+survive zip deploy — fixed with hoisted artifacts + a standalone-verify step in the
+deploy workflows. Remaining: merge fix PR → Deploy all. M4 `pnpm dev` acceptance
+pass still pending.**
 
 ## Docs
 

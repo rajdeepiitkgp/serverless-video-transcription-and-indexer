@@ -2,6 +2,10 @@ name: Deploy pipeline
 
 # Plan §9: bundle → Azure/functions-action, onto the Flex Consumption app (package
 # lands in the identity-authenticated `deployments` container — no storage keys).
+# The artifact must be symlink-free (node-linker=hoisted): pnpm deploy's default
+# layout symlinks node_modules entries into node_modules/.pnpm, and those links do
+# not survive the action's zip → server-side extract — the deploy reports success
+# but the host loads zero functions (2026-08-13 incident, second Deploy all run).
 
 on:
   push:
@@ -36,7 +40,25 @@ jobs:
       - run: pnpm exec turbo run build --filter=@vidx/pipeline
 
       - name: Assemble deployable artifact
-        run: pnpm --filter @vidx/pipeline deploy --prod "$RUNNER_TEMP/pipeline-artifact"
+        run: >
+          pnpm --filter @vidx/pipeline deploy --prod --config.node-linker=hoisted
+          "$RUNNER_TEMP/pipeline-artifact"
+
+      - name: Verify artifact is standalone
+        run: |
+          cd "$RUNNER_TEMP/pipeline-artifact"
+          # Symlinks (outside node_modules/.bin, which nothing loads at runtime)
+          # would dangle after the zip → extract on the server.
+          if find node_modules -type l | grep -v '/\.bin/' | grep .; then
+            echo "::error::Artifact contains symlinks — they will not survive zip deployment."
+            exit 1
+          fi
+          node --input-type=module -e "
+            import { readdirSync } from 'node:fs';
+            for (const f of readdirSync('dist/functions').filter((n) => n.endsWith('.js'))) {
+              await import('./dist/functions/' + f);
+              console.log('resolves:', f);
+            }"
 
       - uses: azure/login@v3
         with:
