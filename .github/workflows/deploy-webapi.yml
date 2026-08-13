@@ -1,8 +1,12 @@
 name: Deploy webapi
 
 # Plan §9: bundle → Azure/functions-action. The artifact is assembled with
-# `pnpm deploy` (materializes @vidx/shared and prod deps into a standalone folder —
-# the workspace symlinks never reach the zip) and shipped without remote build.
+# `pnpm deploy` (materializes @vidx/shared and prod deps into a standalone folder)
+# and shipped without remote build. It must be symlink-free (node-linker=hoisted):
+# pnpm deploy's default layout symlinks node_modules entries into
+# node_modules/.pnpm, and those links do not survive the action's zip →
+# server-side extract — the deploy reports success but the host loads zero
+# functions (2026-08-13 incident, second Deploy all run).
 
 on:
   push:
@@ -37,7 +41,12 @@ jobs:
       - run: pnpm exec turbo run build --filter=@vidx/webapi
 
       - name: Assemble deployable artifact
-        run: pnpm --filter @vidx/webapi deploy --prod "$RUNNER_TEMP/webapi-artifact"
+        run: >
+          pnpm --filter @vidx/webapi deploy --prod --config.node-linker=hoisted
+          "$RUNNER_TEMP/webapi-artifact"
+
+      - name: Verify artifact is standalone
+        run: scripts/verify-function-artifact.sh "$RUNNER_TEMP/webapi-artifact"
 
       - uses: azure/login@v3
         with:
@@ -63,3 +72,24 @@ jobs:
           app-name: ${{ steps.app.outputs.name }}
           package: ${{ runner.temp }}/webapi-artifact
           remote-build: false
+
+      # The action reports success whether or not the host registers anything —
+      # assert it did, so any future zero-functions cause fails here instead of
+      # surfacing later as SWA 502s. Retries: the host needs a moment to restart
+      # and index after the package swap.
+      - name: Assert host registered functions
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          for _ in 1 2 3 4 5 6; do
+            COUNT="$(az functionapp function list --resource-group "$AZURE_RESOURCE_GROUP" \
+              --name "${{ steps.app.outputs.name }}" \
+              --query 'length(@)' --output tsv 2>/dev/null || echo 0)"
+            if [[ "${COUNT:-0}" -gt 0 ]]; then
+              echo "Host registered $COUNT function(s)."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Host loaded zero functions after deploy (see the CLAUDE.md artifact gotcha)."
+          exit 1
