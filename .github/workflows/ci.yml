@@ -57,7 +57,8 @@ jobs:
         uses: dorny/test-reporter@v3
         with:
           name: vitest results
-          path: '{packages,services,apps}/*/test-results/junit.xml'
+          # Comma-separated — dorny's globber has no {a,b} brace expansion.
+          path: 'packages/*/test-results/junit.xml,services/*/test-results/junit.xml,apps/*/test-results/junit.xml'
           reporter: java-junit
           use-actions-summary: 'true'
 
