@@ -80,7 +80,7 @@ jobs:
         env:
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
         run: |
-          for _ in 1 2 3 4 5 6; do
+          for _ in $(seq 1 40); do
             COUNT="$(az functionapp function list --resource-group "$AZURE_RESOURCE_GROUP" \
               --name "${{ steps.app.outputs.name }}" \
               --query 'length(@)' --output tsv 2>/dev/null || echo 0)"
