@@ -27,6 +27,10 @@ pnpm build
 pnpm format      # prettier --write
 pnpm replay --bundle <dir>  # re-run pipeline core on a diagnostics bundle (plan §7);
                             # sample bundles: services/pipeline/fixtures/bundles/*
+pnpm diagnostics --id <id>  # download a video's diagnostics bundle + Cosmos doc to
+                            # ./.diagnostics/<id>/ (auth: your own az login; plan §7)
+pnpm smoke       # post-deploy E2E check — driven by deploy-all with SMOKE_* env vars
+                 # (scripts/smoke-test.ts); scripts run directly under Node 24
 pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI auth
                  # emulator + /api proxy → Next dev (:3000) + webapi dev host (:7071 —
                  # real handlers, in-memory stores, seeded library, simulated pipeline:
@@ -78,10 +82,22 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   stored); phase 1 falls back to a keyless placeholder URL so the pipeline's zod
   config stays valid. Set `viArmApiVersion` only to override — an empty-string
   `VI_ARM_API_VERSION` app setting fails config validation, so Bicep omits it.
+  `deploy-infra.yml` **self-phases**: it fetches the IndexingCallback key whenever
+  pipeline code is already deployed and only then deploys subscriptions — so routine
+  infra pushes converge to phase-2 state instead of clobbering the callback URL.
 - M6 deploy-ordering caveat: re-running the infra deployment re-PUTs each Function
   App's app settings from Bicep — anything a code-deploy action added out-of-band
-  (e.g. `WEBSITE_RUN_FROM_PACKAGE` on webapi's Y1 plan) gets wiped. `deploy-all` must
-  run infra phase 2 before checking the apps, and re-run code deploys if needed.
+  (e.g. `WEBSITE_RUN_FROM_PACKAGE` on webapi's Y1 plan) gets wiped. `deploy-all`
+  mitigates by re-deploying webapi code after infra phase 2.
+- Function-app deploy artifacts are assembled with `pnpm --filter <pkg> deploy --prod
+  <dir>`, which requires `injectWorkspacePackages: true` (pnpm-workspace.yaml):
+  workspace deps are hard-linked copies, so `@vidx/shared` + its deps materialize
+  into the artifact instead of leaving dangling symlinks (`--legacy` mode silently
+  drops shared's own dependencies — zod-openapi — from the artifact; don't use it).
+  Injection caveat: after adding a NEW file to packages/shared, run `pnpm install` so
+  consumers' copies refresh. Each service's package.json `files` field (`dist` +
+  `host.json`) defines the artifact. `staticwebapp.config.json` is NOT part of
+  `next build` output — `deploy-web.yml` copies it into `apps/web/out/` before upload.
 - VI auth is ARM `generateAccessToken` via managed identity — key-based/classic VI auth
   is deprecated; don't use it.
 - `.claude/skills/` holds vendored design skills (`frontend-design`, `ui-ux-pro-max`) —
@@ -119,10 +135,13 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 | `infra/`             | Bicep modules (subscription-scope, two-phase)               | **M5 ✅** |
 | `.github/workflows/` | `ci.yml` (M0); deploys + AI review                          | M6        |
 
-Full milestone table: plan §13. **Current: M5 Bicep authored — `az bicep build`
-clean on 0.46.1; live acceptance (`what-if`, scratch-RG deploy, SWA-exclusive check,
-availability test) pends the owner's deploy (local `az login` token was stale).
-M4 `pnpm dev` acceptance pass also still pending. Next up M6 (bootstrap + workflows).**
+Full milestone table: plan §13. **Current: M5 merged (PR #14). M6 split in two PRs:
+PR 1 = deploy story (bootstrap + deploy workflows + smoke/diagnostics scripts +
+setup/teardown/runbook docs) — raised; PR 2 = test-report publishing + ai-review.yml —
+next. Live acceptance of M5+M6 (scratch deploy, SWA-exclusive check, availability
+test, smoke) pends the owner's bootstrap + first `deploy-all`. M4 `pnpm dev`
+acceptance pass also still pending. Browser App Insights telemetry (plan §6) is not
+yet wired in apps/web — flagged for M7 hardening.**
 
 ## Docs
 

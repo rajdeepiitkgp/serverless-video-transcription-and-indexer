@@ -5,6 +5,10 @@
   "type": "module",
   "description": "Event-driven indexing pipeline: Event Grid triggers, Video Indexer callback, Discord notifier",
   "main": "dist/functions/*.js",
+  "files": [
+    "dist",
+    "host.json"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint .",

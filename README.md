@@ -27,3 +27,6 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 - [CONTRIBUTING.md](CONTRIBUTING.md) — branching, commits, PR rules
 - [docs/style-guide.md](docs/style-guide.md) — code style (tool-enforced)
 - [docs/testing-principles.md](docs/testing-principles.md) — the testing pyramid
+- [docs/setup.md](docs/setup.md) — one-time bootstrap + first deploy
+- [docs/teardown-recreate.md](docs/teardown-recreate.md) — destroy/recreate the stack
+- [docs/support-runbook.md](docs/support-runbook.md) — tracking ID → diagnosis → replay

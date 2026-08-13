@@ -5,6 +5,10 @@
   "type": "module",
   "description": "User-facing HTTP API: SWA linked backend serving uploads, videos, search, downloads, stats, health, and OpenAPI docs",
   "main": "dist/functions/*.js",
+  "files": [
+    "dist",
+    "host.json"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json && node dist/dev/server.js",

@@ -1,0 +1,149 @@
+name: Deploy infra
+
+# Plan §9: PRs touching infra/** run a read-only what-if (posted as a PR comment);
+# pushes to main/release deploy. §8 two-phase wiring is self-resolving here: the
+# deploy job fetches the IndexingCallback function key when the pipeline app already
+# has code, and only then deploys Event Grid subscriptions + the keyed VI_CALLBACK_URL
+# — so a fresh stack gets phase 1, and every later run converges to full phase-2
+# state without ever clobbering the callback wiring (CLAUDE.md gotcha).
+
+on:
+  push:
+    branches: [main, 'release/**']
+    paths: ['infra/**']
+  pull_request:
+    paths: ['infra/**']
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      require_event_subscriptions:
+        description: Fail unless the pipeline function key is available (deploy-all phase 2)
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  what-if:
+    # Same-repo PRs only — fork PRs can never mint OIDC tokens or read variables.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: infra-what-if-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Run what-if
+        env:
+          PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          RESOURCE_SUFFIX: ${{ vars.RESOURCE_SUFFIX }}
+          BUDGET_AMOUNT: ${{ vars.BUDGET_AMOUNT }}
+          BUDGET_ALERT_EMAIL: ${{ vars.BUDGET_ALERT_EMAIL }}
+        run: |
+          az deployment sub what-if \
+            --name "vidx-whatif-${{ github.run_id }}" \
+            --location "$AZURE_LOCATION" \
+            --template-file infra/main.bicep \
+            --parameters infra/main.bicepparam \
+            --no-pretty-print > what-if.json
+          {
+            echo '<!-- infra-what-if -->'
+            echo '## Infra `what-if` for this PR'
+            echo '```json'
+            head -c 60000 what-if.json
+            echo '```'
+          } > what-if-comment.md
+
+      - name: Comment what-if on the PR
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('node:fs');
+            const body = fs.readFileSync('what-if-comment.md', 'utf8');
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.includes('<!-- infra-what-if -->'));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-infra
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve VI callback key (phase-2 wiring, best-effort)
+        id: callback
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          APP="$(az functionapp list --resource-group "$AZURE_RESOURCE_GROUP" \
+            --query "[?contains(name, '-pipeline-')] | [0].name" --output tsv 2>/dev/null || true)"
+          KEY=""
+          if [[ -n "$APP" ]]; then
+            KEY="$(az functionapp function keys list --resource-group "$AZURE_RESOURCE_GROUP" \
+              --name "$APP" --function-name IndexingCallback \
+              --query default --output tsv 2>/dev/null || true)"
+          fi
+          if [[ -n "$KEY" ]]; then
+            echo "::add-mask::$KEY"
+            echo "url=https://${APP}.azurewebsites.net/api/indexing-callback?code=${KEY}" >> "$GITHUB_OUTPUT"
+            echo "subscriptions=true" >> "$GITHUB_OUTPUT"
+            echo "Pipeline function key found — deploying with Event Grid subscriptions (phase 2)."
+          else
+            echo "url=" >> "$GITHUB_OUTPUT"
+            echo "subscriptions=false" >> "$GITHUB_OUTPUT"
+            echo "No pipeline function key yet (fresh stack) — phase 1 only."
+          fi
+
+      - name: Enforce phase 2 when required
+        if: inputs.require_event_subscriptions && steps.callback.outputs.subscriptions != 'true'
+        run: |
+          echo "::error::Phase 2 required but the IndexingCallback key is unavailable — was pipeline code deployed?"
+          exit 1
+
+      - name: Deploy
+        env:
+          PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          RESOURCE_SUFFIX: ${{ vars.RESOURCE_SUFFIX }}
+          BUDGET_AMOUNT: ${{ vars.BUDGET_AMOUNT }}
+          BUDGET_ALERT_EMAIL: ${{ vars.BUDGET_ALERT_EMAIL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DEPLOY_EVENT_SUBSCRIPTIONS: ${{ steps.callback.outputs.subscriptions }}
+          VI_CALLBACK_URL: ${{ steps.callback.outputs.url }}
+        run: |
+          az deployment sub create \
+            --name "vidx-infra-${{ github.run_id }}" \
+            --location "$AZURE_LOCATION" \
+            --template-file infra/main.bicep \
+            --parameters infra/main.bicepparam
