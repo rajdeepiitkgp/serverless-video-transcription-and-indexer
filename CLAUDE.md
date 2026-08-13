@@ -73,7 +73,15 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   Event Grid topic — VI cannot send `aeg-sas-key`, so pointing it at the topic silently
   drops events (plan §2, deviation table).
 - Two-phase infra deploy: Event Grid subscriptions (`deployEventSubscriptions=true`)
-  only after function code is deployed.
+  only after function code is deployed. Phase 2 must also pass `viCallbackUrl` (the
+  IndexingCallback URL **with its function key**, fetched at deploy time, never
+  stored); phase 1 falls back to a keyless placeholder URL so the pipeline's zod
+  config stays valid. Set `viArmApiVersion` only to override — an empty-string
+  `VI_ARM_API_VERSION` app setting fails config validation, so Bicep omits it.
+- M6 deploy-ordering caveat: re-running the infra deployment re-PUTs each Function
+  App's app settings from Bicep — anything a code-deploy action added out-of-band
+  (e.g. `WEBSITE_RUN_FROM_PACKAGE` on webapi's Y1 plan) gets wiped. `deploy-all` must
+  run infra phase 2 before checking the apps, and re-run code deploys if needed.
 - VI auth is ARM `generateAccessToken` via managed identity — key-based/classic VI auth
   is deprecated; don't use it.
 - `.claude/skills/` holds vendored design skills (`frontend-design`, `ui-ux-pro-max`) —
@@ -108,11 +116,13 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 | `services/pipeline`  | EG-triggered indexing pipeline + Discord                    | **M2 ✅** |
 | `services/webapi`    | HTTP API (SWA linked backend) + local dev host (`src/dev/`) | **M3 ✅** |
 | `apps/web`           | Next.js static export UI                                    | **M4 ✅** |
-| `infra/`             | Bicep modules                                               | M5        |
+| `infra/`             | Bicep modules (subscription-scope, two-phase)               | **M5 ✅** |
 | `.github/workflows/` | `ci.yml` (M0); deploys + AI review                          | M6        |
 
-Full milestone table: plan §13. **Current: M4 code merged (PRs #8, #9, #11); the
-owner's interactive `pnpm dev` acceptance pass is still pending. Next up M5.**
+Full milestone table: plan §13. **Current: M5 Bicep authored — `az bicep build`
+clean on 0.46.1; live acceptance (`what-if`, scratch-RG deploy, SWA-exclusive check,
+availability test) pends the owner's deploy (local `az login` token was stale).
+M4 `pnpm dev` acceptance pass also still pending. Next up M6 (bootstrap + workflows).**
 
 ## Docs
 
