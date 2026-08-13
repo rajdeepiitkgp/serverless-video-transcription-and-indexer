@@ -23,3 +23,6 @@ local.settings.json
 
 # OS
 .DS_Store
+
+# test reports (CI publishing)
+test-results/

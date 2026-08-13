@@ -2,7 +2,10 @@ name: CI
 
 # Plan §9: lint/typecheck/test/build on every push on every branch + every PR.
 # Coverage gates are enforced per-package by vitest configs (from M1).
-# Test-report publishing (job summaries, PR comments, GitHub Pages) lands in M6.
+# Test reporting (M6): job summary tables + inline failure annotations (vitest
+# github-actions reporter), coverage PR comments, HTML test + coverage reports as
+# artifacts and on GitHub Pages (main pushes). Report/comment steps are gated off
+# fork PRs, which run with a read-only token (plan §9 security posture).
 on:
   push:
   pull_request:
@@ -18,6 +21,10 @@ jobs:
   # Job name "verify" is the required status check in the branch ruleset — keep stable.
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write # dorny/test-reporter check run
+      pull-requests: write # coverage comments
     steps:
       - uses: actions/checkout@v7
 
@@ -41,10 +48,126 @@ jobs:
 
       - run: pnpm typecheck
 
-      - run: pnpm test
+      - id: test
+        run: pnpm test
+
+      - name: Test summary
+        # Runs on pass AND fail (but not when earlier steps died before tests ran).
+        if: ${{ !cancelled() && contains(fromJSON('["success", "failure"]'), steps.test.outcome) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: dorny/test-reporter@v3
+        with:
+          name: vitest results
+          # Comma-separated — dorny's globber has no {a,b} brace expansion.
+          path: 'packages/*/test-results/junit.xml,services/*/test-results/junit.xml,apps/*/test-results/junit.xml'
+          reporter: java-junit
+          use-actions-summary: 'true'
+
+      - name: Coverage comment (shared)
+        if: ${{ !cancelled() && contains(fromJSON('["success", "failure"]'), steps.test.outcome) && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: packages/shared
+          working-directory: packages/shared
+
+      - name: Coverage comment (webapi)
+        if: ${{ !cancelled() && contains(fromJSON('["success", "failure"]'), steps.test.outcome) && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: services/webapi
+          working-directory: services/webapi
+
+      - name: Coverage comment (pipeline)
+        if: ${{ !cancelled() && contains(fromJSON('["success", "failure"]'), steps.test.outcome) && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: services/pipeline
+          working-directory: services/pipeline
+
+      - name: Upload reports artifact
+        if: ${{ !cancelled() && contains(fromJSON('["success", "failure"]'), steps.test.outcome) }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-and-coverage-reports
+          path: |
+            packages/*/test-results
+            packages/*/coverage
+            services/*/test-results
+            services/*/coverage
+            apps/*/test-results
+          if-no-files-found: warn
 
       - run: pnpm build
 
       - name: Bicep lint
-        if: ${{ hashFiles('infra/main.bicep') != '' }} # dormant until infra lands (M5)
         run: az bicep build --file infra/main.bicep
+
+  # Plan §9: HTML test + coverage reports on GitHub Pages (public repo), linked from
+  # the README badges. Replays the verify job's turbo cache (same sha, CI env in the
+  # task hash) instead of re-running the suite.
+  publish-reports:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: actions/cache@v6
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Materialize reports from the turbo cache
+        run: pnpm test
+
+      - name: Assemble report site
+        run: |
+          mkdir -p site
+          for pkg in packages/shared services/webapi services/pipeline apps/web; do
+            name="$(basename "$pkg")"
+            mkdir -p "site/$name"
+            if [ -d "$pkg/test-results/html" ]; then
+              cp -R "$pkg/test-results/html" "site/$name/tests"
+            fi
+            if [ -d "$pkg/coverage" ]; then
+              cp -R "$pkg/coverage" "site/$name/coverage"
+            fi
+          done
+          {
+            echo '<!doctype html><meta charset="utf-8"><title>vidx test reports</title>'
+            echo '<h1>Test &amp; coverage reports</h1>'
+            echo "<p>Commit <code>${GITHUB_SHA}</code></p><ul>"
+            for name in shared webapi pipeline web; do
+              echo "<li><strong>${name}</strong>:"
+              [ -d "site/$name/tests" ] && echo " <a href=\"./$name/tests/\">tests</a>"
+              [ -d "site/$name/coverage" ] && echo " <a href=\"./$name/coverage/\">coverage</a>"
+              echo '</li>'
+            done
+            echo '</ul>'
+          } > site/index.html
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
