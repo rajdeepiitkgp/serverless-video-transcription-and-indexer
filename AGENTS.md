@@ -139,9 +139,9 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 
 Full milestone table: plan §13. **Current: M6 code complete; first Deploy all
 (2026-08-13) failed at webapi — no Node 24 image on Y1 Linux (ADR-0003) — fixed by
-moving webapi to Dedicated B1. Rollout: Destroy → merge fix PR → set the GitHub
-`BUDGET_AMOUNT` variable to 50 → Deploy all. M4 `pnpm dev` acceptance pass still
-pending.**
+moving webapi to Dedicated B1. Destroy ran and `BUDGET_AMOUNT` is set to 50
+(2026-08-13); remaining: merge fix PR → Deploy all. M4 `pnpm dev` acceptance pass
+still pending.**
 
 ## Docs
 

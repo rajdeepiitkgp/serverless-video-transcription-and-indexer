@@ -26,6 +26,8 @@ connection:
 - On the (non-Flex) Consumption plan the host also needs **Queue Data Contributor**
   to initialize — reported failures without it are silent
   ([azure-functions-host#9397](https://github.com/Azure/azure-functions-host/issues/9397)).
+  webapi has since moved to Dedicated (ADR-0003), where the same documented
+  minimums apply; the role set is kept plan-agnostic deliberately.
 
 Granting the three roles live (2026-08-13) did **not** by itself bring the host up —
 the webapi outage had a second, independent cause (no Node 24 image on Y1 Linux,
