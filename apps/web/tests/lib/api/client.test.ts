@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as z from 'zod';
 
-import { ApiRequestError, fetchApi, toApiRequestError } from '@/lib/api/client';
+import { ApiRequestError, fetchApi, fetchApiFile, toApiRequestError } from '@/lib/api/client';
 
 const dataSchema = z.object({ value: z.string() });
 
@@ -64,6 +64,54 @@ describe('fetchApi', () => {
     const failure = await fetchApi('/api/test', dataSchema).catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(ApiRequestError);
     expect((failure as ApiRequestError).code).toBe('invalid_response');
+  });
+});
+
+describe('fetchApiFile', () => {
+  it('returns the raw body and the filename from the disposition', async () => {
+    stubFetch(
+      new Response('WEBVTT\n', {
+        status: 200,
+        headers: {
+          'content-type': 'text/vtt',
+          'content-disposition': 'attachment; filename="demo.vtt"',
+        },
+      }),
+    );
+    const file = await fetchApiFile('/api/videos/x/download/transcript?format=vtt');
+    expect(file.fileName).toBe('demo.vtt');
+    await expect(file.blob.text()).resolves.toBe('WEBVTT\n');
+  });
+
+  it('prefers the RFC 5987 filename* over the ASCII fallback', async () => {
+    stubFetch(
+      new Response('WEBVTT\n', {
+        status: 200,
+        headers: {
+          'content-disposition': `attachment; filename="r_sum_.vtt"; filename*=UTF-8''r%C3%A9sum%C3%A9.vtt`,
+        },
+      }),
+    );
+    const file = await fetchApiFile('/api/test');
+    expect(file.fileName).toBe('résumé.vtt');
+  });
+
+  it('yields a null filename when the header is absent', async () => {
+    stubFetch(new Response('WEBVTT\n', { status: 200 }));
+    const file = await fetchApiFile('/api/test');
+    expect(file.fileName).toBeNull();
+  });
+
+  it('surfaces the error envelope with its tracking id', async () => {
+    stubFetch(
+      jsonResponse(
+        { error: { code: 'not_found', message: 'Video not found.', trackingId: 'VXT-a1b2c3d4' } },
+        404,
+      ),
+    );
+    const failure = await fetchApiFile('/api/test').catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(ApiRequestError);
+    expect((failure as ApiRequestError).trackingId).toBe('VXT-a1b2c3d4');
   });
 });
 
