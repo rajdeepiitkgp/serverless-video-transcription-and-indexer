@@ -4,7 +4,9 @@ name: Deploy web
 # api_location "" (linked-backend constraint). The deploy token is fetched at deploy
 # time via `az staticwebapp secrets list` — never stored (§8 teardown table).
 # staticwebapp.config.json lives at the package root, not in the export output, so
-# it is copied in before upload.
+# it is copied in before upload. No skip_api_build: the action defines no such
+# input (passing it warned on every run) — api_location "" already means no API
+# build happens.
 
 on:
   push:

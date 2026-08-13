@@ -45,20 +45,7 @@ jobs:
           "$RUNNER_TEMP/pipeline-artifact"
 
       - name: Verify artifact is standalone
-        run: |
-          cd "$RUNNER_TEMP/pipeline-artifact"
-          # Symlinks (outside node_modules/.bin, which nothing loads at runtime)
-          # would dangle after the zip → extract on the server.
-          if find node_modules -type l | grep -v '/\.bin/' | grep .; then
-            echo "::error::Artifact contains symlinks — they will not survive zip deployment."
-            exit 1
-          fi
-          node --input-type=module -e "
-            import { readdirSync } from 'node:fs';
-            for (const f of readdirSync('dist/functions').filter((n) => n.endsWith('.js'))) {
-              await import('./dist/functions/' + f);
-              console.log('resolves:', f);
-            }"
+        run: scripts/verify-function-artifact.sh "$RUNNER_TEMP/pipeline-artifact"
 
       - uses: azure/login@v3
         with:
@@ -84,3 +71,24 @@ jobs:
           app-name: ${{ steps.app.outputs.name }}
           package: ${{ runner.temp }}/pipeline-artifact
           remote-build: false
+
+      # The action reports success whether or not the host registers anything —
+      # assert it did, so any future zero-functions cause fails here instead of
+      # three jobs later in infra phase 2. Retries: the host needs a moment to
+      # restart and index after the package swap.
+      - name: Assert host registered functions
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          for _ in 1 2 3 4 5 6; do
+            COUNT="$(az functionapp function list --resource-group "$AZURE_RESOURCE_GROUP" \
+              --name "${{ steps.app.outputs.name }}" \
+              --query 'length(@)' --output tsv 2>/dev/null || echo 0)"
+            if [[ "${COUNT:-0}" -gt 0 ]]; then
+              echo "Host registered $COUNT function(s)."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Host loaded zero functions after deploy (see the CLAUDE.md artifact gotcha)."
+          exit 1

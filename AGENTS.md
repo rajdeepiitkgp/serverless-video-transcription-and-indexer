@@ -90,13 +90,15 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   gets wiped. `deploy-all` mitigates by re-deploying webapi code after infra phase 2
   (less critical since webapi moved to B1/zipdeploy — ADR-0003 — but kept as
   insurance).
-- Function-app deploy artifacts are assembled with `pnpm --filter <pkg> deploy --prod
---config.node-linker=hoisted <dir>`. Hoisted is mandatory: pnpm's default layout
+- Function-app deploy artifacts are assembled per service with `pnpm deploy --prod`
+  plus `--config.node-linker=hoisted`. Hoisted is mandatory: pnpm's default layout
   symlinks `node_modules` entries into `node_modules/.pnpm`, and those links do not
   survive the functions-action zip → server-side extract — the deploy reports
   success but the host loads **zero functions** (bit both apps on the second Deploy
-  all, 2026-08-13; the workflows now verify the artifact — no symlinks outside
-  `.bin`, every `dist/functions/*.js` imports). `injectWorkspacePackages: true`
+  all, 2026-08-13). Guards: `scripts/verify-function-artifact.sh` runs pre-upload
+  (host.json/package.json present, no symlinks outside `.bin`, every entrypoint in
+  the package.json `main` glob imports), and the deploy workflows assert the host
+  registered >0 functions after the deploy. `injectWorkspacePackages: true`
   (pnpm-workspace.yaml) stays required: workspace deps are hard-linked copies, so
   `@vidx/shared` + its deps materialize into the artifact (`--legacy` mode silently
   drops shared's own dependencies — zod-openapi — from the artifact; don't use it).
