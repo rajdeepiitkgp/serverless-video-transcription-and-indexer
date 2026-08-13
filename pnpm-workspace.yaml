@@ -24,5 +24,13 @@ minimumReleaseAgeExclude:
 # uuid <14 is flagged by GHSA-w5hq-g745-h8pq and only reachable via
 # azurite -> @azure/ms-rest-js / sequelize, which pin uuid@^8 (dev-only).
 # Safe on Node 24 (require(esm)); drop when azurite's deps move to uuid >=14.
+#
+# adm-zip <0.6 (GHSA-xcpc-8h2w-3j85) and tmp <0.2.6 (GHSA-ph9p-34f9-6g65,
+# GHSA-52f5-9888-hmc6) are dev-only, reachable solely via
+# @azure/static-web-apps-cli (adm-zip directly, tmp via devcert); Dependabot
+# can't bump them there (pinned transitively), so they're forced here like uuid.
+# Drop each when the SWA CLI's dependency tree moves past the patched versions.
 overrides:
   uuid: ^14.0.1
+  adm-zip: ^0.6.0
+  tmp: ^0.2.7
