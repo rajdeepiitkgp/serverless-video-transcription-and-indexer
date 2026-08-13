@@ -143,26 +143,30 @@ async function fetchWithRetry(path: string, init: FetchApiInit | undefined): Pro
  * zod contract. All server data flows through here (docs/style-guide.md): components
  * use the hooks in `hooks.ts`, never `fetch` directly.
  */
+async function toRequestFailure(response: Response): Promise<ApiRequestError> {
+  const body: unknown = await response.json().catch(() => null);
+  const parsed = errorEnvelopeSchema.safeParse(body);
+  if (parsed.success) {
+    return new ApiRequestError({ ...parsed.data.error, status: response.status });
+  }
+  return new ApiRequestError({
+    code: `http_${String(response.status)}`,
+    message: 'The request failed. Try again, and contact support if it keeps failing.',
+    trackingId: null,
+    status: response.status,
+  });
+}
+
 export async function fetchApi<T extends z.ZodType>(
   path: string,
   dataSchema: T,
   init?: FetchApiInit,
 ): Promise<z.output<T>> {
   const response = await fetchWithRetry(path, init);
-  const body: unknown = await response.json().catch(() => null);
-
   if (!response.ok) {
-    const parsed = errorEnvelopeSchema.safeParse(body);
-    if (parsed.success) {
-      throw new ApiRequestError({ ...parsed.data.error, status: response.status });
-    }
-    throw new ApiRequestError({
-      code: `http_${String(response.status)}`,
-      message: 'The request failed. Try again, and contact support if it keeps failing.',
-      trackingId: null,
-      status: response.status,
-    });
+    throw await toRequestFailure(response);
   }
+  const body: unknown = await response.json().catch(() => null);
 
   // Two steps ({ data } shape, then the contract) so the generic stays inferable.
   const unwrapped = successEnvelopeSchema.safeParse(body);
@@ -176,4 +180,43 @@ export async function fetchApi<T extends z.ZodType>(
     });
   }
   return parsed.data;
+}
+
+/** A file streamed by the API: the raw bytes plus the name the server chose for it. */
+export interface ApiFileResponse {
+  blob: Blob;
+  fileName: string | null;
+}
+
+const FILENAME_STAR = /filename\*=UTF-8''([^;]+)/i;
+const FILENAME_QUOTED = /filename="([^"]*)"/i;
+
+/** Download name from an RFC 6266 `attachment` disposition; `filename*` wins when present. */
+function fileNameFromDisposition(disposition: string | null): string | null {
+  const star = disposition === null ? null : FILENAME_STAR.exec(disposition);
+  if (star?.[1] !== undefined) {
+    try {
+      return decodeURIComponent(star[1]);
+    } catch {
+      // Malformed percent-encoding — fall back to the ASCII filename.
+    }
+  }
+  const quoted = disposition === null ? null : FILENAME_QUOTED.exec(disposition);
+  return quoted?.[1] ?? null;
+}
+
+/**
+ * Fetches an API route that streams a file body (`content-disposition: attachment`)
+ * instead of the `{ data: … }` envelope — the transcript downloads. Failures still
+ * arrive as the JSON error envelope, so they surface the same tracking IDs.
+ */
+export async function fetchApiFile(path: string, init?: FetchApiInit): Promise<ApiFileResponse> {
+  const response = await fetchWithRetry(path, init);
+  if (!response.ok) {
+    throw await toRequestFailure(response);
+  }
+  return {
+    blob: await response.blob(),
+    fileName: fileNameFromDisposition(response.headers.get('content-disposition')),
+  };
 }

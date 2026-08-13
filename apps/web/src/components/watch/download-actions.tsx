@@ -5,7 +5,7 @@ import { Download, FileText } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { fetchApi, toApiRequestError } from '@/lib/api/client';
+import { fetchApi, fetchApiFile, toApiRequestError } from '@/lib/api/client';
 
 type DownloadKind = 'video' | 'vtt' | 'json';
 
@@ -15,6 +15,24 @@ const DOWNLOAD_PATHS: Record<DownloadKind, (id: string) => string> = {
   json: (id) => `/api/videos/${encodeURIComponent(id)}/download/transcript?format=json`,
 };
 
+/** Used only if the server's content-disposition filename goes missing. */
+const FALLBACK_FILE_NAMES: Record<Exclude<DownloadKind, 'video'>, string> = {
+  vtt: 'transcript.vtt',
+  json: 'transcript.json',
+};
+
+/** Hands fetched bytes to the browser as a named file save. */
+function saveBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 interface DownloadActionsProps {
   videoId: string;
   /** Transcript downloads only make sense once a transcript exists. */
@@ -22,8 +40,9 @@ interface DownloadActionsProps {
 }
 
 /**
- * Downloads are open to every signed-in user (plan §4, round-3 decision). The API
- * returns a short-lived SAS URL; navigating to it triggers the browser download.
+ * Downloads are open to every signed-in user (plan §4, round-3 decision). The video
+ * endpoint returns a short-lived SAS URL to navigate to; the transcript endpoint
+ * streams the file itself (text/vtt or a JSON line array, per the OpenAPI contract).
  */
 export function DownloadActions({
   videoId,
@@ -35,10 +54,16 @@ export function DownloadActions({
   const download = (kind: DownloadKind): void => {
     setBusy(kind);
     setError(null);
-    fetchApi(DOWNLOAD_PATHS[kind](videoId), downloadResponseSchema)
-      .then((data) => {
-        window.location.assign(data.url);
-      })
+    const path = DOWNLOAD_PATHS[kind](videoId);
+    const request =
+      kind === 'video'
+        ? fetchApi(path, downloadResponseSchema).then((data) => {
+            window.location.assign(data.url);
+          })
+        : fetchApiFile(path).then((file) => {
+            saveBlob(file.blob, file.fileName ?? FALLBACK_FILE_NAMES[kind]);
+          });
+    request
       .catch((cause: unknown) => {
         const requestError = toApiRequestError(cause);
         setError(
