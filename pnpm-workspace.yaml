@@ -28,9 +28,12 @@ minimumReleaseAgeExclude:
 # adm-zip <0.6 (GHSA-xcpc-8h2w-3j85) and tmp <0.2.6 (GHSA-ph9p-34f9-6g65,
 # GHSA-52f5-9888-hmc6) are dev-only, reachable solely via
 # @azure/static-web-apps-cli (adm-zip directly, tmp via devcert); Dependabot
-# can't bump them there (pinned transitively), so they're forced here like uuid.
+# can't bump them there (pinned transitively), so they're forced here like uuid —
+# but scoped to those exact paths so future consumers of either package aren't
+# held back from newer fixes. The tmp 0.0.x→0.2.x jump is unexercised in this
+# repo (devcert only runs under `swa start --ssl`, which we don't use).
 # Drop each when the SWA CLI's dependency tree moves past the patched versions.
 overrides:
   uuid: ^14.0.1
-  adm-zip: ^0.6.0
-  tmp: ^0.2.7
+  '@azure/static-web-apps-cli>adm-zip': ^0.6.0
+  'devcert>tmp': ^0.2.7
