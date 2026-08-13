@@ -76,6 +76,12 @@ resource site 'Microsoft.Web/sites@2024-04-01' = {
       minTlsVersion: '1.2'
       use32BitWorkerProcess: false // 64-bit — Node 24 requirement (§1 decisions)
       appSettings: [
+        // Pinned declaratively so a standalone infra re-PUT (which wipes settings
+        // the code-deploy action adds out-of-band) can never re-enable a remote
+        // Oryx build — the artifact is prebuilt, and its workspace:* deps are
+        // unresolvable by npm install (CLAUDE.md gotcha).
+        { name: 'SCM_DO_BUILD_DURING_DEPLOYMENT', value: 'false' }
+        { name: 'ENABLE_ORYX_BUILD', value: 'false' }
         { name: 'AzureWebJobsStorage__accountName', value: storageAccountName }
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
         { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }

@@ -78,7 +78,27 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   Event Grid topic — VI cannot send `aeg-sas-key`, so pointing it at the topic silently
   drops events (plan §2, deviation table).
 - Two-phase infra deploy: Event Grid subscriptions (`deployEventSubscriptions=true`)
-  only after function code is deployed.
+  only after function code is deployed. Phase 2 must also pass `viCallbackUrl` (the
+  IndexingCallback URL **with its function key**, fetched at deploy time, never
+  stored); phase 1 falls back to a keyless placeholder URL so the pipeline's zod
+  config stays valid. Set `viArmApiVersion` only to override — an empty-string
+  `VI_ARM_API_VERSION` app setting fails config validation, so Bicep omits it.
+  `deploy-infra.yml` **self-phases**: it fetches the IndexingCallback key whenever
+  pipeline code is already deployed and only then deploys subscriptions.
+- M6 deploy-ordering caveat: re-running the infra deployment re-PUTs each Function
+  App's app settings from Bicep — anything a code-deploy action added out-of-band
+  gets wiped. `deploy-all` mitigates by re-deploying webapi code after infra phase 2
+  (less critical since webapi moved to B1/zipdeploy — ADR-0003 — but kept as
+  insurance).
+- Function-app deploy artifacts are assembled with `pnpm --filter <pkg> deploy --prod
+  <dir>`, which requires `injectWorkspacePackages: true` (pnpm-workspace.yaml):
+  workspace deps are hard-linked copies, so `@vidx/shared` + its deps materialize
+  into the artifact instead of leaving dangling symlinks (`--legacy` mode silently
+  drops shared's own dependencies — zod-openapi — from the artifact; don't use it).
+  Injection caveat: after adding a NEW file to packages/shared, run `pnpm install` so
+  consumers' copies refresh. Each service's package.json `files` field (`dist` +
+  `host.json`) defines the artifact. `staticwebapp.config.json` is NOT part of
+  `next build` output — `deploy-web.yml` copies it into `apps/web/out/` before upload.
 - Function-app identities need Storage Blob Data **Owner** + Queue/Table Data
   Contributor on the host storage account (ADR-0002) — the documented minimums for
   identity-based `AzureWebJobsStorage`; shortfalls reportedly fail silently.

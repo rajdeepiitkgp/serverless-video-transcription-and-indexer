@@ -2,7 +2,8 @@
 
 The whole stack lives in one resource group and is destroyed/recreated from
 GitHub Actions with zero portal steps (plan §8). Destroy between sessions costs
-≈ $0; the standing cost while deployed is dominated by SWA Standard (~$9/mo).
+≈ $0; the standing cost while deployed is ~$22/mo — the webapi B1 plan (~$13,
+ADR-0003) plus SWA Standard (~$9).
 
 ## Destroy
 

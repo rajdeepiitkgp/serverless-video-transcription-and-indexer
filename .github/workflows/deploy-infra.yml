@@ -50,7 +50,7 @@ jobs:
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
           RESOURCE_SUFFIX: ${{ vars.RESOURCE_SUFFIX }}
-          BUDGET_AMOUNT: ${{ vars.BUDGET_AMOUNT }}
+          BUDGET_AMOUNT: ${{ vars.BUDGET_AMOUNT || '50' }}
           BUDGET_ALERT_EMAIL: ${{ vars.BUDGET_ALERT_EMAIL }}
         run: |
           az deployment sub what-if \
@@ -136,7 +136,7 @@ jobs:
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
           RESOURCE_SUFFIX: ${{ vars.RESOURCE_SUFFIX }}
-          BUDGET_AMOUNT: ${{ vars.BUDGET_AMOUNT }}
+          BUDGET_AMOUNT: ${{ vars.BUDGET_AMOUNT || '50' }}
           BUDGET_ALERT_EMAIL: ${{ vars.BUDGET_ALERT_EMAIL }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DEPLOY_EVENT_SUBSCRIPTIONS: ${{ steps.callback.outputs.subscriptions }}
