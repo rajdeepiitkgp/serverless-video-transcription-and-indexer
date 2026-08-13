@@ -6,6 +6,10 @@
       "allowedRoles": ["anonymous"]
     },
     {
+      "route": "/favicon.ico",
+      "allowedRoles": ["anonymous"]
+    },
+    {
       "route": "/.auth/login/aad",
       "allowedRoles": ["anonymous"]
     },
