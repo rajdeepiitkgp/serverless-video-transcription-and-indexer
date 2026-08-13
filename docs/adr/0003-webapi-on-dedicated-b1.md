@@ -50,13 +50,20 @@ site on `linuxFxVersion: NODE|24` and `alwaysOn: true` (the Dedicated-plan
 requirement for Functions). Everything else — SWA linked backend, keyless identity
 configuration, default `/api` route prefix — is unchanged.
 
-A Consumption plan cannot be converted or moved to Dedicated in place: rolling this
-out over an existing deployment requires **Destroy → Deploy all**, which the stack's
+A Consumption plan cannot be converted or moved to Dedicated in place, and
+`deploy-infra.yml` auto-deploys on any `main` push touching `infra/**` — so merging
+this change over a live Y1 stack would immediately fail the in-place conversion on a
+red `main`. The rollout order is therefore **Destroy → merge → Deploy all** (the
+destroy-first step also clears the incident's ad-hoc role assignments before Bicep
+re-creates the same triples under its own names), which the stack's
 delete/recreate-safe contract exists to support.
 
 ## Consequences
 
-- ~$13/month for the B1 plan; in exchange the API has no cold starts.
+- ~$13/month for the B1 plan; in exchange the API has no cold starts. The default
+  monthly budget rises 10 → 25 USD to match (`BUDGET_AMOUNT`; the owner must also
+  raise the GitHub `BUDGET_AMOUNT` variable if it's set to the old value, or the
+  100%-actual and forecast alerts fire permanently).
 - Deploys use the standard zipdeploy path; the M6 caveat about re-created
   `WEBSITE_RUN_FROM_PACKAGE` app settings no longer applies to webapi, but
   `deploy-all` keeps the webapi re-deploy after infra phase 2 as cheap insurance.

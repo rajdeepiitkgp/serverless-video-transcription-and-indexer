@@ -146,9 +146,10 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 Full milestone table: plan §13. **Current: M6 code complete; bootstrap + GitHub
 config done. First Deploy all (2026-08-13) failed at webapi — root cause: no Node 24
 image on Y1 Linux (ADR-0003), plus under-scoped host-storage roles (ADR-0002); fix =
-webapi on Dedicated B1. Remaining owner steps: merge the fix PR → run Destroy → run
-Deploy all (required: Y1→B1 can't convert in place; also clears the incident's
-ad-hoc role assignments; closes M5 live acceptance). M4 `pnpm dev` acceptance pass
+webapi on Dedicated B1. Remaining owner steps: run Destroy **before** merging (the
+merge auto-fires deploy-infra, and Y1→B1 can't convert in place; destroy also clears
+the incident's ad-hoc role assignments) → merge the fix PR → check the GitHub
+`BUDGET_AMOUNT` variable is ≥ 25 → run Deploy all (closes M5 live acceptance). M4 `pnpm dev` acceptance pass
 still pending. Browser App Insights telemetry (plan §6) not yet wired in apps/web —
 flagged for M7 hardening.**
 

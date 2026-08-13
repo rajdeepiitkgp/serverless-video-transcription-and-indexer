@@ -3,8 +3,9 @@ name: Deploy all
 # Plan §9: manual full-stack deploy — infra phase 1 → webapi + pipeline + web →
 # infra phase 2 (Event Grid subscriptions + keyed VI callback) → smoke test.
 # webapi code is re-deployed after phase 2 because the infra run re-PUTs app
-# settings from Bicep, which wipes anything the functions deploy set out-of-band
-# (e.g. WEBSITE_RUN_FROM_PACKAGE on the Y1 plan) — see the CLAUDE.md gotcha.
+# settings from Bicep, which wipes anything the functions deploy set out-of-band —
+# see the CLAUDE.md gotcha (less critical since webapi moved to B1/zipdeploy,
+# ADR-0003, but kept as insurance).
 
 on:
   workflow_dispatch:

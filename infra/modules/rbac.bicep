@@ -6,9 +6,9 @@
 // The function apps hold Storage Blob Data Owner — the documented minimum for the
 // host's identity-based AzureWebJobsStorage connection, and a superset of the
 // generateUserDelegationKey permission both apps use to mint user-delegation SAS
-// (shared-key access is disabled). Queue + Table Data Contributor complete the host
-// storage requirements: without the queue role the Y1 (webapi) host never starts
-// (ADR-0002).
+// (shared-key access is disabled). Queue + Table Data Contributor complete the
+// documented host storage requirements (ADR-0002 — precautionary; shortfalls are
+// reported to fail silently, though they were not this stack's outage cause).
 
 @description('Storage account name (SAS + blob read/write scope)')
 param storageAccountName string

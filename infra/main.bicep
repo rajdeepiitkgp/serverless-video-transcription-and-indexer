@@ -29,8 +29,8 @@ param resourceGroupName string
 @description('Extra seed for globally-unique names — bump on name-reservation lag after teardown (RESOURCE_SUFFIX)')
 param resourceSuffix string = '01'
 
-@description('Monthly budget in USD (BUDGET_AMOUNT)')
-param budgetAmount int = 10
+@description('Monthly budget in USD (BUDGET_AMOUNT). Floor ~25: the B1 webapi plan alone runs ~$13/month (ADR-0003)')
+param budgetAmount int = 25
 
 @description('Email for budget + monitoring alerts (BUDGET_ALERT_EMAIL)')
 param budgetAlertEmail string
