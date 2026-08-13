@@ -68,13 +68,40 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 
 ## Gotchas
 
-- SWA linked backend: webapi stays on **Consumption (Y1)** (Flex unsupported for linked
-  backends), keeps the default `/api` route prefix, SWA deploys with `api_location: ""`.
+- SWA linked backend: webapi runs on **Dedicated (B1)** (ADR-0003 — Y1 Linux has no
+  Node 24 image and Flex is unsupported for linked backends), keeps the default `/api`
+  route prefix, SWA deploys with `api_location: ""`. A `linuxFxVersion` without an
+  image for the plan SKU deploys cleanly but the container never starts: instant 503,
+  zero logs, "Runtime version: Error" — check `functionAppStacks` SKU metadata, not
+  `az functionapp list-runtimes` (not SKU-aware).
 - Video Indexer callback goes to an **HTTP function** which republishes to the custom
   Event Grid topic — VI cannot send `aeg-sas-key`, so pointing it at the topic silently
   drops events (plan §2, deviation table).
 - Two-phase infra deploy: Event Grid subscriptions (`deployEventSubscriptions=true`)
-  only after function code is deployed.
+  only after function code is deployed. Phase 2 must also pass `viCallbackUrl` (the
+  IndexingCallback URL **with its function key**, fetched at deploy time, never
+  stored); phase 1 falls back to a keyless placeholder URL so the pipeline's zod
+  config stays valid. Set `viArmApiVersion` only to override — an empty-string
+  `VI_ARM_API_VERSION` app setting fails config validation, so Bicep omits it.
+  `deploy-infra.yml` **self-phases**: it fetches the IndexingCallback key whenever
+  pipeline code is already deployed and only then deploys subscriptions.
+- M6 deploy-ordering caveat: re-running the infra deployment re-PUTs each Function
+  App's app settings from Bicep — anything a code-deploy action added out-of-band
+  gets wiped. `deploy-all` mitigates by re-deploying webapi code after infra phase 2
+  (less critical since webapi moved to B1/zipdeploy — ADR-0003 — but kept as
+  insurance).
+- Function-app deploy artifacts are assembled with `pnpm --filter <pkg> deploy --prod
+  <dir>`, which requires `injectWorkspacePackages: true` (pnpm-workspace.yaml):
+  workspace deps are hard-linked copies, so `@vidx/shared` + its deps materialize
+  into the artifact instead of leaving dangling symlinks (`--legacy` mode silently
+  drops shared's own dependencies — zod-openapi — from the artifact; don't use it).
+  Injection caveat: after adding a NEW file to packages/shared, run `pnpm install` so
+  consumers' copies refresh. Each service's package.json `files` field (`dist` +
+  `host.json`) defines the artifact. `staticwebapp.config.json` is NOT part of
+  `next build` output — `deploy-web.yml` copies it into `apps/web/out/` before upload.
+- Function-app identities need Storage Blob Data **Owner** + Queue/Table Data
+  Contributor on the host storage account (ADR-0002) — the documented minimums for
+  identity-based `AzureWebJobsStorage`; shortfalls reportedly fail silently.
 - VI auth is ARM `generateAccessToken` via managed identity — key-based/classic VI auth
   is deprecated; don't use it.
 - The watch-page player is **media-chrome**, not Vidstack — the plan §14 evaluation
@@ -107,11 +134,14 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 | `services/pipeline`  | EG-triggered indexing pipeline + Discord                    | **M2 ✅** |
 | `services/webapi`    | HTTP API (SWA linked backend) + local dev host (`src/dev/`) | **M3 ✅** |
 | `apps/web`           | Next.js static export UI                                    | **M4 ✅** |
-| `infra/`             | Bicep modules (not yet created)                             | M5        |
-| `.github/workflows/` | `ci.yml` (M0); deploys + AI review                          | M6        |
+| `infra/`             | Bicep modules (subscription-scope, two-phase)               | **M5 ✅** |
+| `.github/workflows/` | `ci.yml` + reports (M0/M6); deploys, destroy, AI review     | **M6 ✅** |
 
-Full milestone table: plan §13. **Current: M4 code merged (PRs #8, #9, #11); the
-owner's interactive `pnpm dev` acceptance pass is still pending. Next up M5.**
+Full milestone table: plan §13. **Current: M6 code complete; first Deploy all
+(2026-08-13) failed at webapi — no Node 24 image on Y1 Linux (ADR-0003) — fixed by
+moving webapi to Dedicated B1. Destroy ran and `BUDGET_AMOUNT` is set to 50
+(2026-08-13); remaining: merge fix PR → Deploy all. M4 `pnpm dev` acceptance pass
+still pending.**
 
 ## Docs
 

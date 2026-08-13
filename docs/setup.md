@@ -41,7 +41,7 @@ for kv in \
   "PROJECT_NAME=vidx" \
   "RESOURCE_SUFFIX=01" \
   "BUDGET_ALERT_EMAIL=<your email>" \
-  "BUDGET_AMOUNT=10"; do
+  "BUDGET_AMOUNT=50"; do
   gh variable set "${kv%%=*}" --env production --repo "$REPO" --body "${kv#*=}"
 done
 ```

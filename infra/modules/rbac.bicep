@@ -1,10 +1,14 @@
-// Plan §3/§5: all role assignments (except VI→storage, which lives in
-// video-indexer.bicep). System-assigned identities everywhere; assignments are
-// idempotent guid()-named and carry explicit principalType to avoid AAD replication
-// races on freshly-created identities.
+// Plan §3/§5 as amended by ADR-0002: all role assignments (except VI→storage, which
+// lives in video-indexer.bicep). System-assigned identities everywhere; assignments
+// are idempotent guid()-named and carry explicit principalType to avoid AAD
+// replication races on freshly-created identities.
 //
-// Storage Blob Data Contributor includes generateUserDelegationKey, which is what
-// both apps use to mint user-delegation SAS (shared-key access is disabled).
+// The function apps hold Storage Blob Data Owner — the documented minimum for the
+// host's identity-based AzureWebJobsStorage connection, and a superset of the
+// generateUserDelegationKey permission both apps use to mint user-delegation SAS
+// (shared-key access is disabled). Queue + Table Data Contributor complete the
+// documented host storage requirements (ADR-0002 — precautionary; shortfalls are
+// reported to fail silently, though they were not this stack's outage cause).
 
 @description('Storage account name (SAS + blob read/write scope)')
 param storageAccountName string
@@ -33,6 +37,18 @@ param customTopicPrincipalId string
 var storageBlobDataContributorRoleId = subscriptionResourceId(
   'Microsoft.Authorization/roleDefinitions',
   'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+)
+var storageBlobDataOwnerRoleId = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+)
+var storageQueueDataContributorRoleId = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
+)
+var storageTableDataContributorRoleId = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
 )
 var eventGridDataSenderRoleId = subscriptionResourceId(
   'Microsoft.Authorization/roleDefinitions',
@@ -65,11 +81,35 @@ resource customTopic 'Microsoft.EventGrid/topics@2022-06-15' existing = {
   name: customTopicName
 }
 
-// --- Storage: Blob Data Contributor ---
+// --- Storage: function-app host roles (ADR-0002) ---
+// Blob Data Owner (host minimum; also covers SAS minting + results/diagnostics
+// blob I/O per §5), Queue Data Contributor (host initialization), Table Data
+// Contributor (host diagnostic events).
+
+var hostStorageAssignments = [
+  { principalId: webApiPrincipalId, roleId: storageBlobDataOwnerRoleId }
+  { principalId: webApiPrincipalId, roleId: storageQueueDataContributorRoleId }
+  { principalId: webApiPrincipalId, roleId: storageTableDataContributorRoleId }
+  { principalId: pipelinePrincipalId, roleId: storageBlobDataOwnerRoleId }
+  { principalId: pipelinePrincipalId, roleId: storageQueueDataContributorRoleId }
+  { principalId: pipelinePrincipalId, roleId: storageTableDataContributorRoleId }
+]
+
+resource hostStorageRoles 'Microsoft.Authorization/roleAssignments@2022-04-01' = [
+  for assignment in hostStorageAssignments: {
+    name: guid(storageAccount.id, assignment.principalId, assignment.roleId)
+    scope: storageAccount
+    properties: {
+      principalId: assignment.principalId
+      roleDefinitionId: assignment.roleId
+      principalType: 'ServicePrincipal'
+    }
+  }
+]
+
+// --- Storage: Blob Data Contributor (Event Grid dead-letter writes) ---
 
 var blobContributorPrincipals = [
-  webApiPrincipalId // upload/playback/download SAS, results reads (§5)
-  pipelinePrincipalId // read-SAS for VI submit, results + diagnostics writes (§5)
   systemTopicPrincipalId // identity-based dead-letter writes
   customTopicPrincipalId // identity-based dead-letter writes
 ]

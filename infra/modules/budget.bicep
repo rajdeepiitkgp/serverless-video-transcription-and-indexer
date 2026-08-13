@@ -1,4 +1,4 @@
-// Plan §8: monthly RG budget (default $10, parameterized) alerting BUDGET_ALERT_EMAIL
+// Plan §8: monthly RG budget (default $50 — ADR-0003; parameterized) alerting BUDGET_ALERT_EMAIL
 // at 50% / 80% / 100% actual + 100% forecast. Deployed at resource-group scope so it
 // dies (and is recreated) with the stack.
 
