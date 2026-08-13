@@ -20,6 +20,9 @@ param envName string = 'prod'
 @description('Azure region for all resources (AZURE_LOCATION)')
 param location string
 
+@description('Region for the Static Web App only — SWA is deployable to a short region list (centralus/eastus2/westus2/westeurope/eastasia) that excludes eastus; the app itself is globally distributed, so this is metadata placement, and cross-region backend linking is supported')
+param staticWebAppLocation string = 'eastus2'
+
 @description('Resource group name (AZURE_RESOURCE_GROUP)')
 param resourceGroupName string
 
@@ -83,7 +86,7 @@ module staticWebApp 'modules/static-web-app.bicep' = {
   scope: rg
   params: {
     swaName: '${prefix}-web-${suffix}'
-    location: location
+    location: staticWebAppLocation
   }
 }
 

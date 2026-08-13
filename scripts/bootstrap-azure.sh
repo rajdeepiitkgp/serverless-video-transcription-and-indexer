@@ -43,44 +43,60 @@ fi
 # wildcard. The pull_request credential lets same-repo PRs run the read-only
 # `what-if` job (fork PRs can never mint OIDC tokens, so they are excluded by
 # GitHub itself).
+#
+# GitHub presents OIDC subjects in the ID-qualified form
+# `repo:<owner>@<owner-id>/<repo>@<repo-id>:...` — exact-match credentials must
+# use that exact string (classic `repo:owner/repo:...` subjects fail with
+# AADSTS700213). The IDs are immutable, which also makes these rename-proof.
 
 ISSUER="https://token.actions.githubusercontent.com"
 AUDIENCE="api://AzureADTokenExchange"
 
-create_fic() {
+OWNER_ID="$(gh api "repos/${REPO}" --jq .owner.id)"
+REPO_ID="$(gh api "repos/${REPO}" --jq .id)"
+SUBJECT_PREFIX="repo:${REPO%%/*}@${OWNER_ID}/${REPO#*/}@${REPO_ID}"
+echo "==> OIDC subject prefix: ${SUBJECT_PREFIX}"
+
+# Create-or-update so re-runs converge existing credentials onto the current
+# subject format instead of skipping them.
+ensure_fic() {
   local name="$1" subject="$2"
-  if az ad app federated-credential show --id "${APP_ID}" --federated-credential-id "${name}" > /dev/null 2>&1; then
-    echo "==> Federated credential '${name}' already exists"
-    return
-  fi
-  echo "==> Creating federated credential '${name}' (${subject})"
-  az ad app federated-credential create --id "${APP_ID}" --parameters "{
+  local params="{
     \"name\": \"${name}\",
     \"issuer\": \"${ISSUER}\",
     \"subject\": \"${subject}\",
     \"audiences\": [\"${AUDIENCE}\"]
   }"
+  if az ad app federated-credential show --id "${APP_ID}" --federated-credential-id "${name}" > /dev/null 2>&1; then
+    echo "==> Updating federated credential '${name}' (${subject})"
+    az ad app federated-credential update --id "${APP_ID}" --federated-credential-id "${name}" --parameters "${params}"
+  else
+    echo "==> Creating federated credential '${name}' (${subject})"
+    az ad app federated-credential create --id "${APP_ID}" --parameters "${params}"
+  fi
 }
 
-create_fic "github-main" "repo:${REPO}:ref:refs/heads/main"
-create_fic "github-env-production" "repo:${REPO}:environment:production"
-create_fic "github-pull-request" "repo:${REPO}:pull_request"
+ensure_fic "github-main" "${SUBJECT_PREFIX}:ref:refs/heads/main"
+ensure_fic "github-env-production" "${SUBJECT_PREFIX}:environment:production"
+ensure_fic "github-pull-request" "${SUBJECT_PREFIX}:pull_request"
 
 if ! az ad app federated-credential show --id "${APP_ID}" --federated-credential-id "github-release-branches" > /dev/null 2>&1; then
   echo "==> Creating flexible federated credential for release/* branches"
-  az ad app federated-credential create --id "${APP_ID}" --parameters "{
-    \"name\": \"github-release-branches\",
-    \"issuer\": \"${ISSUER}\",
-    \"audiences\": [\"${AUDIENCE}\"],
-    \"claimsMatchingExpression\": {
-      \"value\": \"claims['sub'] matches 'repo:${REPO}:ref:refs/heads/release/*'\",
-      \"languageVersion\": 1
-    }
-  }" || cat <<'EOF'
-WARNING: flexible federated credentials (claims matching) were rejected — your az /
-Graph tenant may not support them yet. Deploys from release/* still work because the
-jobs run in the `production` environment (covered by github-env-production); re-run
-this script later to add the branch-scoped credential.
+  az rest --method post \
+    --url "https://graph.microsoft.com/beta/applications(appId='${APP_ID}')/federatedIdentityCredentials" \
+    --body "{
+      \"name\": \"github-release-branches\",
+      \"issuer\": \"${ISSUER}\",
+      \"audiences\": [\"${AUDIENCE}\"],
+      \"claimsMatchingExpression\": {
+        \"value\": \"claims['sub'] matches '${SUBJECT_PREFIX}:ref:refs/heads/release/*'\",
+        \"languageVersion\": 1
+      }
+    }" || cat <<'EOF'
+WARNING: the flexible federated credential (claims matching expression) was rejected —
+some tenants do not accept expressions for the GitHub issuer. This is fine: deploys
+from release/* run in the `production` environment and are covered by the
+github-env-production credential. Re-run this script later to retry.
 EOF
 else
   echo "==> Federated credential 'github-release-branches' already exists"
