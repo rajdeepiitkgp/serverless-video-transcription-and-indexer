@@ -47,7 +47,7 @@ param swaName string
 resource plan 'Microsoft.Web/serverfarms@2024-04-01' = {
   name: planName
   location: location
-  kind: 'linux'
+  kind: 'linux' // conventional for Dedicated Linux plans ('functionapp' was the Y1 idiom); reserved:true is what actually selects Linux
   sku: {
     name: 'B1'
     tier: 'Basic'

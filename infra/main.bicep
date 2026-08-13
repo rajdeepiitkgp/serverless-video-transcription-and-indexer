@@ -29,7 +29,8 @@ param resourceGroupName string
 @description('Extra seed for globally-unique names — bump on name-reservation lag after teardown (RESOURCE_SUFFIX)')
 param resourceSuffix string = '01'
 
-@description('Monthly budget in USD (BUDGET_AMOUNT). Idle fixed cost is ~$22/month (B1 webapi ~$13 + SWA Standard ~$9, ADR-0003); 50 keeps idle spend under the 50% notification threshold')
+@description('Monthly budget in USD (BUDGET_AMOUNT). Idle fixed cost is ~$22/month (B1 webapi ~$13 + SWA Standard ~$9, ADR-0003); 50 keeps idle spend under the 50% notification threshold. minValue makes a stale BUDGET_AMOUNT variable fail loudly at what-if instead of spamming threshold alerts')
+@minValue(50)
 param budgetAmount int = 50
 
 @description('Email for budget + monitoring alerts (BUDGET_ALERT_EMAIL)')

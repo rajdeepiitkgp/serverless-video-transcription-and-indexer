@@ -3,8 +3,9 @@
 - **Status**: Accepted
 - **Date**: 2026-08-13
 - **Amends**: IMPLEMENTATION_PLAN.md §2/§8 (webapi hosting: "Consumption (Y1) — Flex
-  isn't supported for linked backends" → Dedicated B1). Preserves the §1 decision to
-  run Node 24 everywhere.
+  isn't supported for linked backends" → Dedicated B1), §9 (`BUDGET_AMOUNT` default
+  10 → 50), and §12's cost profile (standing cost gains the ~$13/month B1 plan).
+  Preserves the §1 decision to run Node 24 everywhere.
 
 ## Context
 
