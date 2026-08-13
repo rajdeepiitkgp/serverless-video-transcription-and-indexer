@@ -71,8 +71,12 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 
 ## Gotchas
 
-- SWA linked backend: webapi stays on **Consumption (Y1)** (Flex unsupported for linked
-  backends), keeps the default `/api` route prefix, SWA deploys with `api_location: ""`.
+- SWA linked backend: webapi runs on **Dedicated (B1)** (ADR-0003 — Y1 Linux has no
+  Node 24 image and Flex is unsupported for linked backends), keeps the default `/api`
+  route prefix, SWA deploys with `api_location: ""`. A `linuxFxVersion` without an
+  image for the plan SKU deploys cleanly but the container never starts: instant 503,
+  zero logs, "Runtime version: Error" — check `functionAppStacks` SKU metadata, not
+  `az functionapp list-runtimes` (not SKU-aware).
 - Video Indexer callback goes to an **HTTP function** which republishes to the custom
   Event Grid topic — VI cannot send `aeg-sas-key`, so pointing it at the topic silently
   drops events (plan §2, deviation table).
@@ -87,8 +91,9 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   infra pushes converge to phase-2 state instead of clobbering the callback URL.
 - M6 deploy-ordering caveat: re-running the infra deployment re-PUTs each Function
   App's app settings from Bicep — anything a code-deploy action added out-of-band
-  (e.g. `WEBSITE_RUN_FROM_PACKAGE` on webapi's Y1 plan) gets wiped. `deploy-all`
-  mitigates by re-deploying webapi code after infra phase 2.
+  gets wiped. `deploy-all` mitigates by re-deploying webapi code after infra phase 2
+  (less critical since webapi moved to B1/zipdeploy — ADR-0003 — but kept as
+  insurance).
 - Function-app deploy artifacts are assembled with `pnpm --filter <pkg> deploy --prod
   <dir>`, which requires `injectWorkspacePackages: true` (pnpm-workspace.yaml):
   workspace deps are hard-linked copies, so `@vidx/shared` + its deps materialize
@@ -98,6 +103,9 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   consumers' copies refresh. Each service's package.json `files` field (`dist` +
   `host.json`) defines the artifact. `staticwebapp.config.json` is NOT part of
   `next build` output — `deploy-web.yml` copies it into `apps/web/out/` before upload.
+- Function-app identities need Storage Blob Data **Owner** + Queue/Table Data
+  Contributor on the host storage account (ADR-0002) — the documented minimums for
+  identity-based `AzureWebJobsStorage`; shortfalls reportedly fail silently.
 - VI auth is ARM `generateAccessToken` via managed identity — key-based/classic VI auth
   is deprecated; don't use it.
 - `.claude/skills/` holds vendored design skills (`frontend-design`, `ui-ux-pro-max`) —
@@ -135,14 +143,14 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 | `infra/`             | Bicep modules (subscription-scope, two-phase)               | **M5 ✅** |
 | `.github/workflows/` | `ci.yml` + reports (M0/M6); deploys, destroy, AI review     | **M6 ✅** |
 
-Full milestone table: plan §13. **Current: M6 code complete — PR #15 (deploy story)
-merged; second M6 PR (test reports on Pages + ai-review.yml) raised. GitHub side
-ready: `production` environment + 8 variables set, Pages enabled (workflow source).
-Remaining owner steps: `az login` → `scripts/bootstrap-azure.sh` → set
-`AZURE_CLIENT_ID` variable + the `DISCORD_WEBHOOK_URL`/`ANTHROPIC_API_KEY` secrets →
-run Deploy all (also closes M5 live acceptance). M4 `pnpm dev` acceptance pass still
-pending. Browser App Insights telemetry (plan §6) not yet wired in apps/web — flagged
-for M7 hardening.**
+Full milestone table: plan §13. **Current: M6 code complete; bootstrap + GitHub
+config done. First Deploy all (2026-08-13) failed at webapi — root cause: no Node 24
+image on Y1 Linux (ADR-0003), plus under-scoped host-storage roles (ADR-0002); fix =
+webapi on Dedicated B1. Remaining owner steps: merge the fix PR → run Destroy → run
+Deploy all (required: Y1→B1 can't convert in place; also clears the incident's
+ad-hoc role assignments; closes M5 live acceptance). M4 `pnpm dev` acceptance pass
+still pending. Browser App Insights telemetry (plan §6) not yet wired in apps/web —
+flagged for M7 hardening.**
 
 ## Docs
 
