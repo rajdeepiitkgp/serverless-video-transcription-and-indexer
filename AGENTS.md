@@ -159,9 +159,11 @@ fully green, webapi failed only on the assert's too-short 90s window. #4: webapi
 assert failed again at the full ~10 min — the host had all 12 functions one
 minute after zipdeploy, but the assert polled ARM's never-synced cache (artifact
 gotcha above); fixed by polling the host-runtime API + syncing triggers on
-success. AI review is now opt-in via the `ai-review` PR label or `@claude`
-comment (ADR-0004). Remaining: merge fix PR → Deploy all. M4 `pnpm dev`
-acceptance pass still pending.**
+success. #5: green through both infra phases + all code deploys; smoke failed
+only generating its test clip — ubuntu-latest runners no longer ship ffmpeg —
+deploy-all now apt-installs it first. AI review is now opt-in via the
+`ai-review` PR label or `@claude` comment (ADR-0004). Remaining: merge fix
+PR → Deploy all. M4 `pnpm dev` acceptance pass still pending.**
 
 ## Docs
 

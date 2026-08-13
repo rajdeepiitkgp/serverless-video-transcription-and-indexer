@@ -168,12 +168,15 @@ pipeline fully green (hoisted fix validated), webapi failed ONLY on the assert's
 too-short 90s window. #4: webapi assert failed again at the full ~10 min — but
 the host had all 12 functions live one minute after zipdeploy; the assert was
 polling ARM's never-synced cache (see the artifact gotcha) — fixed by polling
-the host-runtime API + syncing triggers on success. AI review is now opt-in via
-the `ai-review` PR label or `@claude` comment (ADR-0004 — API-credit cost).
-Remaining owner steps: merge the fix PR → run Deploy all (closes M5 live
-acceptance). Watch item: /api/health availability probes log cosmos+storage
-probe timeouts (2s budget) — may be MI-token latency; check after the next
-deploy. M4 `pnpm dev` acceptance pass still pending. Browser App Insights
+the host-runtime API + syncing triggers on success. #5: green through BOTH
+infra phases + all code deploys (host-runtime assert validated live); smoke
+failed only generating its test clip — ubuntu-latest runner images no longer
+ship ffmpeg (22.04 had it, 24.04+ dropped it) — deploy-all now apt-installs it
+first. AI review is now opt-in via the `ai-review` PR label or `@claude`
+comment (ADR-0004 — API-credit cost). Remaining owner steps: merge the fix
+PR → run Deploy all (closes M5 live acceptance). Watch item: /api/health
+availability probes log cosmos+storage probe timeouts (2s budget) — may be
+MI-token latency; check after the next deploy. M4 `pnpm dev` acceptance pass still pending. Browser App Insights
 telemetry (plan §6) not yet wired in apps/web — flagged for M7 hardening.**
 
 ## Docs
