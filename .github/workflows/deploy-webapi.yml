@@ -74,26 +74,10 @@ jobs:
           remote-build: false
 
       # The action reports success whether or not the host registers anything —
-      # assert it did, so any future zero-functions cause fails here instead of
-      # surfacing later as SWA 502s. Retries: the host needs a moment to restart
-      # and index after the package swap — on Dedicated (B1) the site container
-      # restart alone has been observed to take ~5-6 minutes (2026-08-13, third
-      # Deploy all: webapi registered all 12 functions ~6 min after zipdeploy,
-      # well past the original 6×15s window). Flex registers in seconds; success
-      # exits early, so the long ceiling only costs time on genuine failures.
+      # assert it did (host-runtime truth, not ARM's stale cache; ~10-min ceiling
+      # for the B1 container restart — see the script header), so any future
+      # zero-functions cause fails here instead of surfacing later as SWA 502s.
       - name: Assert host registered functions
         env:
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-        run: |
-          for _ in $(seq 1 40); do
-            COUNT="$(az functionapp function list --resource-group "$AZURE_RESOURCE_GROUP" \
-              --name "${{ steps.app.outputs.name }}" \
-              --query 'length(@)' --output tsv 2>/dev/null || echo 0)"
-            if [[ "${COUNT:-0}" -gt 0 ]]; then
-              echo "Host registered $COUNT function(s)."
-              exit 0
-            fi
-            sleep 15
-          done
-          echo "::error::Host loaded zero functions after deploy (see the CLAUDE.md artifact gotcha)."
-          exit 1
+        run: scripts/assert-host-functions.sh "$AZURE_RESOURCE_GROUP" "${{ steps.app.outputs.name }}"

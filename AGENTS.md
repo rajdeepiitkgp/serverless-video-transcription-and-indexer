@@ -97,10 +97,14 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   success but the host loads **zero functions** (bit both apps on the second Deploy
   all, 2026-08-13). Guards: `scripts/verify-function-artifact.sh` runs pre-upload
   (host.json/package.json present, no symlinks outside `.bin`, every entrypoint in
-  the package.json `main` glob imports), and the deploy workflows assert the host
-  registered >0 functions after the deploy — with a ~10-min ceiling, because a B1
-  site container has been observed to take ~5-6 min to restart + index after
-  zipdeploy (Flex registers in seconds). `injectWorkspacePackages: true`
+  the package.json `main` glob imports), and `scripts/assert-host-functions.sh`
+  asserts the host registered >0 functions after the deploy (~10-min ceiling for
+  the B1 container restart; Flex registers in seconds). The assert polls the
+  **host-runtime admin API** — ARM's `sites/<app>/functions` list is a cache that
+  only a sync-triggers call refreshes, the Kudu zipdeploy path (B1) never syncs
+  it, and it reported zero for a healthy 12-function host for 10+ minutes (fourth
+  Deploy all); the script syncs the cache on success so portal/key lookups
+  converge. `injectWorkspacePackages: true`
   (pnpm-workspace.yaml) stays required: workspace deps are hard-linked copies, so
   `@vidx/shared` + its deps materialize into the artifact (`--legacy` mode silently
   drops shared's own dependencies — zod-openapi — from the artifact; don't use it).
@@ -151,11 +155,13 @@ Full milestone table: plan §13. **Current: M6 code complete. Deploy-all history
 moving webapi to Dedicated B1 (ADR-0003). #2: code deploys green, but both hosts
 loaded zero functions — pnpm-symlinked artifacts don't survive zip deploy — fixed
 with hoisted artifacts + verify script + post-deploy function assert. #3: pipeline
-fully green, webapi failed only on the assert's too-short 90s window (host healthy
-with all 12 functions ~6 min after zipdeploy); window widened to ~10 min. AI
-review is now opt-in via the `ai-review` PR label or `@claude` comment (ADR-0004).
-Remaining: merge fix PR → Deploy all. M4 `pnpm dev` acceptance pass still
-pending.**
+fully green, webapi failed only on the assert's too-short 90s window. #4: webapi
+assert failed again at the full ~10 min — the host had all 12 functions one
+minute after zipdeploy, but the assert polled ARM's never-synced cache (artifact
+gotcha above); fixed by polling the host-runtime API + syncing triggers on
+success. AI review is now opt-in via the `ai-review` PR label or `@claude`
+comment (ADR-0004). Remaining: merge fix PR → Deploy all. M4 `pnpm dev`
+acceptance pass still pending.**
 
 ## Docs
 

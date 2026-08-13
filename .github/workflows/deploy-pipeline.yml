@@ -73,22 +73,10 @@ jobs:
           remote-build: false
 
       # The action reports success whether or not the host registers anything —
-      # assert it did, so any future zero-functions cause fails here instead of
-      # three jobs later in infra phase 2. Retries: the host needs a moment to
-      # restart and index after the package swap.
+      # assert it did (host-runtime truth, not ARM's stale cache — see the script
+      # header), so any future zero-functions cause fails here instead of three
+      # jobs later in infra phase 2.
       - name: Assert host registered functions
         env:
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-        run: |
-          for _ in $(seq 1 40); do
-            COUNT="$(az functionapp function list --resource-group "$AZURE_RESOURCE_GROUP" \
-              --name "${{ steps.app.outputs.name }}" \
-              --query 'length(@)' --output tsv 2>/dev/null || echo 0)"
-            if [[ "${COUNT:-0}" -gt 0 ]]; then
-              echo "Host registered $COUNT function(s)."
-              exit 0
-            fi
-            sleep 15
-          done
-          echo "::error::Host loaded zero functions after deploy (see the CLAUDE.md artifact gotcha)."
-          exit 1
+        run: scripts/assert-host-functions.sh "$AZURE_RESOURCE_GROUP" "${{ steps.app.outputs.name }}"
