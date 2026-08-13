@@ -177,12 +177,19 @@ fired ~60s after the webapi-after-phase-2 restart, before the SWA→backend path
 settled (App Insights logged NO GetHealth request for it — the 503 came from in
 front of the function; the endpoint answered 200 moments later). smoke-test.ts
 now retries the health gate (SMOKE_HEALTH_RETRY_MINUTES, default 5) and starts
-the pipeline-poll window after upload, not at process start. AI review is now
-opt-in via the `ai-review` PR label or `@claude` comment (ADR-0004 — API-credit
-cost). Remaining owner steps: merge the fix PR → run Deploy all (closes M5 live
-acceptance). Watch item (NOT what bit run #6): /api/health availability probes
-log cosmos+storage probe timeouts (2s budget) — may be MI-token latency; check
-if smoke reports degraded. M4 `pnpm dev` acceptance pass still pending. Browser App Insights
+the pipeline-poll window after upload, not at process start. #7: health retry
+validated (503 → 200); upload landed, Event Grid delivered BlobCreated — and the
+pipeline correctly IGNORED it: "No metadata document for blob — not uploaded via
+the API". Plan-internal contradiction (§9 smoke uploads directly vs §2's guard)
+resolved by ADR-0005: smoke now seeds the same `Uploaded` Cosmos document
+POST /api/uploads writes (keep in sync with upload-policy.ts) before uploading;
+deploy principal gets Cosmos Data Contributor in rbac.bicep via `deployer()`
+(NOT bootstrap — sqlRoleAssignments die with the account on destroy). AI review
+is now opt-in via the `ai-review` PR label or `@claude` comment (ADR-0004 —
+API-credit cost). Remaining owner steps: merge the fix PR → run Deploy all
+(closes M5 live acceptance). Watch item: /api/health cold start logged a
+13.7s/503 GetHealth in run #7 (cosmos+storage probes vs 2s budget — MI-token
+latency suspected); the health retry rides it out, but M7 should look. M4 `pnpm dev` acceptance pass still pending. Browser App Insights
 telemetry (plan §6) not yet wired in apps/web — flagged for M7 hardening.**
 
 ## Docs

@@ -1,21 +1,25 @@
-// Post-deploy smoke test (plan §3/§9): checks /api/health through the SWA domain,
-// uploads a sample clip straight into the videos container, and polls the results
+// Post-deploy smoke test (plan §3/§9 as amended by ADR-0005): checks /api/health
+// through the SWA domain, seeds the upload's `Uploaded` metadata document in Cosmos
+// (the pipeline ignores blobs that didn't arrive through the API — seventh Deploy
+// all), uploads a sample clip into the videos container, and polls the results
 // container until the pipeline writes insights.json + transcript.vtt (i.e. the video
 // reached Processed end-to-end: BlobCreated → VI → callback → results → Cosmos).
 // The uploaded clip is deliberately left in place — it becomes the library's first
 // entry and M7's playable-with-CC check reuses it.
 //
 // Auth: DefaultAzureCredential (az login locally, OIDC via azure/login in CI). The
-// deploy identity holds Storage Blob Data Contributor (bootstrap-azure.sh) so it can
-// upload without any key or SAS. Runs directly under Node 24 (type stripping).
+// deploy identity holds Storage Blob Data Contributor (bootstrap-azure.sh) and
+// Cosmos Data Contributor (rbac.bicep via deployer(), ADR-0005), so it needs no key
+// or SAS anywhere. Runs directly under Node 24 (type stripping).
 //
 // Env: SMOKE_STORAGE_ACCOUNT (required), SMOKE_SWA_HOSTNAME (required),
-//      SMOKE_VIDEO_FILE (required, path to a small clip),
-//      SMOKE_TIMEOUT_MINUTES (default 20), SMOKE_POLL_SECONDS (default 15),
-//      SMOKE_HEALTH_RETRY_MINUTES (default 5).
+//      SMOKE_COSMOS_ENDPOINT (required), SMOKE_VIDEO_FILE (required, path to a
+//      small clip), SMOKE_TIMEOUT_MINUTES (default 20),
+//      SMOKE_POLL_SECONDS (default 15), SMOKE_HEALTH_RETRY_MINUTES (default 5).
 
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
+import { CosmosClient } from '@azure/cosmos';
 import { DefaultAzureCredential } from '@azure/identity';
 import { BlobServiceClient } from '@azure/storage-blob';
 
@@ -30,6 +34,7 @@ const requireEnv = (name: string): string => {
 
 const storageAccount = requireEnv('SMOKE_STORAGE_ACCOUNT');
 const swaHostname = requireEnv('SMOKE_SWA_HOSTNAME');
+const cosmosEndpoint = requireEnv('SMOKE_COSMOS_ENDPOINT');
 const videoFile = requireEnv('SMOKE_VIDEO_FILE');
 const timeoutMinutes = Number(process.env['SMOKE_TIMEOUT_MINUTES'] ?? '20');
 const pollSeconds = Number(process.env['SMOKE_POLL_SECONDS'] ?? '15');
@@ -85,9 +90,37 @@ const main = async (): Promise<void> => {
   );
 
   const uploadId = crypto.randomUUID();
-  const blobName = `${uploadId}/${basename(videoFile)}`;
+  const fileName = basename(videoFile);
+  const blobName = `${uploadId}/${fileName}`;
   const videos = blobService.getContainerClient('videos');
   const results = blobService.getContainerClient('results');
+
+  // Seed the `Uploaded` document the API would have written (ADR-0005) — the
+  // pipeline ignores blobs with no metadata document. Mirrors
+  // services/webapi/src/core/upload-policy.ts#createUploadedDocument (keep in
+  // sync); database/container names are the Bicep + app-setting defaults.
+  const trackingId = `VXT-${crypto.randomUUID().replaceAll('-', '').slice(0, 8)}`;
+  const metadata = new CosmosClient({ endpoint: cosmosEndpoint, aadCredentials: credential })
+    .database('VideoAnalytics')
+    .container('VideoMetadata');
+  console.log(`smoke: seeding metadata document ${uploadId} (tracking ${trackingId})`);
+  await metadata.items.upsert({
+    id: uploadId,
+    videoId: null,
+    schemaVersion: 1,
+    name: fileName,
+    blobPath: `videos/${blobName}`,
+    playable: true,
+    status: 'Uploaded',
+    uploadedBy: { userId: 'smoke-test', userDetails: 'deploy-all smoke test' },
+    keywords: [],
+    topics: [],
+    transcript: [],
+    chapters: [],
+    resultsPrefix: `results/${uploadId}/`,
+    trackingIds: { upload: trackingId },
+    error: null,
+  });
 
   console.log(`smoke: uploading ${videoFile} → videos/${blobName}`);
   const content = await readFile(videoFile);
