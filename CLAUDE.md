@@ -102,7 +102,9 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
   all, 2026-08-13). Guards: `scripts/verify-function-artifact.sh` runs pre-upload
   (host.json/package.json present, no symlinks outside `.bin`, every entrypoint in
   the package.json `main` glob imports), and the deploy workflows assert the host
-  registered >0 functions after the deploy. `injectWorkspacePackages: true`
+  registered >0 functions after the deploy — with a ~10-min ceiling, because a B1
+  site container has been observed to take ~5-6 min to restart + index after
+  zipdeploy (Flex registers in seconds). `injectWorkspacePackages: true`
   (pnpm-workspace.yaml) stays required: workspace deps are hard-linked copies, so
   `@vidx/shared` + its deps materialize into the artifact (`--legacy` mode silently
   drops shared's own dependencies — zod-openapi — from the artifact; don't use it).
@@ -140,28 +142,31 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 
 ## Layout & milestone status
 
-| Path                 | Contents                                                    | Milestone |
-| -------------------- | ----------------------------------------------------------- | --------- |
-| `packages/config`    | shared tsconfig/eslint/prettier presets                     | **M0 ✅** |
-| `packages/shared`    | zod contracts → OpenAPI, VI insight parsers                 | **M1 ✅** |
-| `services/pipeline`  | EG-triggered indexing pipeline + Discord                    | **M2 ✅** |
-| `services/webapi`    | HTTP API (SWA linked backend) + local dev host (`src/dev/`) | **M3 ✅** |
-| `apps/web`           | Next.js static export UI                                    | **M4 ✅** |
-| `infra/`             | Bicep modules (subscription-scope, two-phase)               | **M5 ✅** |
-| `.github/workflows/` | `ci.yml` + reports (M0/M6); deploys, destroy, AI review     | **M6 ✅** |
+| Path                 | Contents                                                                   | Milestone |
+| -------------------- | -------------------------------------------------------------------------- | --------- |
+| `packages/config`    | shared tsconfig/eslint/prettier presets                                    | **M0 ✅** |
+| `packages/shared`    | zod contracts → OpenAPI, VI insight parsers                                | **M1 ✅** |
+| `services/pipeline`  | EG-triggered indexing pipeline + Discord                                   | **M2 ✅** |
+| `services/webapi`    | HTTP API (SWA linked backend) + local dev host (`src/dev/`)                | **M3 ✅** |
+| `apps/web`           | Next.js static export UI                                                   | **M4 ✅** |
+| `infra/`             | Bicep modules (subscription-scope, two-phase)                              | **M5 ✅** |
+| `.github/workflows/` | `ci.yml` + reports (M0/M6); deploys, destroy, AI review (opt-in, ADR-0004) | **M6 ✅** |
 
 Full milestone table: plan §13. **Current: M6 code complete; bootstrap + GitHub
-config done. First Deploy all (2026-08-13) failed at webapi — no Node 24 image on
-Y1 Linux; webapi moved to Dedicated B1 (ADR-0003), host-storage roles widened
-(ADR-0002), destroy + recreate, `BUDGET_AMOUNT` 50 (idle fixed cost ~$22/mo: B1
-~$13 + SWA Standard ~$9; `@minValue(50)` guards regressions). Second Deploy all
-(2026-08-13, post-merge): every code deploy green — B1 fix validated — but infra
-phase 2 failed: both function hosts loaded zero functions because pnpm-symlinked
-artifacts don't survive zip deploy (see the artifact gotcha; fixed with hoisted
-artifacts + a standalone-verify step in the deploy workflows). Remaining owner
-steps: merge the fix PR → run Deploy all (closes M5 live acceptance). M4 `pnpm dev`
-acceptance pass still pending. Browser App Insights telemetry (plan §6) not yet
-wired in apps/web — flagged for M7 hardening.**
+config done. Deploy-all history (all 2026-08-13): #1 failed at webapi — no Node 24
+image on Y1 Linux; webapi moved to Dedicated B1 (ADR-0003), host-storage roles
+widened (ADR-0002), destroy + recreate, `BUDGET_AMOUNT` 50 (idle fixed cost
+~$22/mo: B1 ~$13 + SWA Standard ~$9; `@minValue(50)` guards regressions). #2:
+code deploys green but infra phase 2 failed — both hosts loaded zero functions;
+pnpm-symlinked artifacts don't survive zip deploy (artifact gotcha above; fixed
+with hoisted artifacts + verify script + post-deploy function assert). #3:
+pipeline fully green (hoisted fix validated), webapi failed ONLY on the assert's
+too-short 90s window — the host itself came up healthy with all 12 functions ~6
+min after zipdeploy; fix widened the window to ~10 min. AI review is now opt-in
+via the `ai-review` PR label or `@claude` comment (ADR-0004 — API-credit cost).
+Remaining owner steps: merge the fix PR → run Deploy all (closes M5 live
+acceptance). M4 `pnpm dev` acceptance pass still pending. Browser App Insights
+telemetry (plan §6) not yet wired in apps/web — flagged for M7 hardening.**
 
 ## Docs
 

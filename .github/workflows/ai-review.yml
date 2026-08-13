@@ -1,13 +1,15 @@
 name: AI review
 
-# Plan §9: Claude Code reviews every same-repo PR automatically; fork PRs get a
-# review only when a maintainer comments `@claude` (never pull_request_target
-# automation — fork code must not run with secrets). ANTHROPIC_API_KEY lives in the
-# `production` environment.
+# Plan §9 as amended by ADR-0004: AI review is opt-in — each run spends Anthropic
+# API credits, so nothing reviews automatically by default. Add the `ai-review`
+# label to a same-repo PR to have every push reviewed while the label stays on,
+# or comment `@claude` (maintainers only; the only path for fork PRs — never
+# pull_request_target automation, fork code must not run with secrets).
+# ANTHROPIC_API_KEY lives in the `production` environment.
 
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review]
+    types: [opened, synchronize, ready_for_review, labeled]
   issue_comment:
     types: [created]
 
@@ -20,10 +22,14 @@ permissions:
 
 jobs:
   auto-review:
+    # Runs only while the PR carries the `ai-review` label; the last clause stops
+    # unrelated `labeled` events from triggering duplicate reviews.
     if: >-
       github.event_name == 'pull_request' &&
       !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'ai-review') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'ai-review')
     runs-on: ubuntu-latest
     environment: production
     concurrency:
