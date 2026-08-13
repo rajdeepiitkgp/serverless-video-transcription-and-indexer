@@ -133,15 +133,16 @@ pnpm dev         # local console at http://localhost:4280 (plan §11): SWA CLI a
 | `services/webapi`    | HTTP API (SWA linked backend) + local dev host (`src/dev/`) | **M3 ✅** |
 | `apps/web`           | Next.js static export UI                                    | **M4 ✅** |
 | `infra/`             | Bicep modules (subscription-scope, two-phase)               | **M5 ✅** |
-| `.github/workflows/` | `ci.yml` (M0); deploys + AI review                          | M6        |
+| `.github/workflows/` | `ci.yml` + reports (M0/M6); deploys, destroy, AI review     | **M6 ✅** |
 
-Full milestone table: plan §13. **Current: M5 merged (PR #14). M6 split in two PRs:
-PR 1 = deploy story (bootstrap + deploy workflows + smoke/diagnostics scripts +
-setup/teardown/runbook docs) — raised; PR 2 = test-report publishing + ai-review.yml —
-next. Live acceptance of M5+M6 (scratch deploy, SWA-exclusive check, availability
-test, smoke) pends the owner's bootstrap + first `deploy-all`. M4 `pnpm dev`
-acceptance pass also still pending. Browser App Insights telemetry (plan §6) is not
-yet wired in apps/web — flagged for M7 hardening.**
+Full milestone table: plan §13. **Current: M6 code complete — PR #15 (deploy story)
+merged; second M6 PR (test reports on Pages + ai-review.yml) raised. GitHub side
+ready: `production` environment + 8 variables set, Pages enabled (workflow source).
+Remaining owner steps: `az login` → `scripts/bootstrap-azure.sh` → set
+`AZURE_CLIENT_ID` variable + the `DISCORD_WEBHOOK_URL`/`ANTHROPIC_API_KEY` secrets →
+run Deploy all (also closes M5 live acceptance). M4 `pnpm dev` acceptance pass still
+pending. Browser App Insights telemetry (plan §6) not yet wired in apps/web — flagged
+for M7 hardening.**
 
 ## Docs
 

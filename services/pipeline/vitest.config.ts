@@ -11,8 +11,19 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     globalSetup: ['./tests/support/azurite-global-setup.ts'],
+    // CI report publishing (plan §9). Specifying `reporters` replaces Vitest's CI
+    // default, so github-actions (inline failure annotations) is re-added explicitly.
+    reporters: process.env.CI
+      ? [
+          'default',
+          'github-actions',
+          ['junit', { outputFile: 'test-results/junit.xml' }],
+          ['html', { outputFile: 'test-results/html/index.html' }],
+        ]
+      : ['default'],
     coverage: {
       provider: 'v8',
+      reporter: ['text', 'html', 'json-summary', 'json'],
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.test.ts',

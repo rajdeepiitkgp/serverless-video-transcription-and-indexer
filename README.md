@@ -10,7 +10,11 @@ Everything is defined in Bicep and deployed from GitHub Actions via OIDC — the
 stack can be destroyed and recreated with zero manual portal steps and no Azure
 credential secrets in GitHub.
 
-<!-- CI / coverage badges land in M6 (test reports on GitHub Pages) -->
+[![CI](https://github.com/rajdeepiitkgp/serverless-video-transcription-and-indexer/actions/workflows/ci.yml/badge.svg)](https://github.com/rajdeepiitkgp/serverless-video-transcription-and-indexer/actions/workflows/ci.yml)
+[![test & coverage reports](https://img.shields.io/badge/test%20%26%20coverage-reports-blue)](https://rajdeepiitkgp.github.io/serverless-video-transcription-and-indexer/)
+[![coverage: shared](https://img.shields.io/badge/dynamic/json?label=shared&query=%24.total.lines.pct&suffix=%25&url=https%3A%2F%2Frajdeepiitkgp.github.io%2Fserverless-video-transcription-and-indexer%2Fshared%2Fcoverage%2Fcoverage-summary.json)](https://rajdeepiitkgp.github.io/serverless-video-transcription-and-indexer/shared/coverage/)
+[![coverage: webapi](https://img.shields.io/badge/dynamic/json?label=webapi&query=%24.total.lines.pct&suffix=%25&url=https%3A%2F%2Frajdeepiitkgp.github.io%2Fserverless-video-transcription-and-indexer%2Fwebapi%2Fcoverage%2Fcoverage-summary.json)](https://rajdeepiitkgp.github.io/serverless-video-transcription-and-indexer/webapi/coverage/)
+[![coverage: pipeline](https://img.shields.io/badge/dynamic/json?label=pipeline&query=%24.total.lines.pct&suffix=%25&url=https%3A%2F%2Frajdeepiitkgp.github.io%2Fserverless-video-transcription-and-indexer%2Fpipeline%2Fcoverage%2Fcoverage-summary.json)](https://rajdeepiitkgp.github.io/serverless-video-transcription-and-indexer/pipeline/coverage/)
 
 ## Getting started
 

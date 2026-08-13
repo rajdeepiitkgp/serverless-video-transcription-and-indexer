@@ -1,0 +1,64 @@
+name: AI review
+
+# Plan §9: Claude Code reviews every same-repo PR automatically; fork PRs get a
+# review only when a maintainer comments `@claude` (never pull_request_target
+# automation — fork code must not run with secrets). ANTHROPIC_API_KEY lives in the
+# `production` environment.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+jobs:
+  auto-review:
+    if: >-
+      github.event_name == 'pull_request' &&
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: ai-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: >-
+            Review this pull request as a strict but pragmatic senior engineer.
+            The repo's contract is IMPLEMENTATION_PLAN.md; conventions live in
+            CLAUDE.md, docs/style-guide.md, and docs/testing-principles.md. Focus on
+            (1) real bugs and unhandled failure paths, (2) violations of the style
+            guide, the ports-and-adapters boundaries, or the zero-secret rules, and
+            (3) missing or misplaced tests (tests live in tests/ trees, never src/).
+            Post concise inline comments on the specific lines; skip nitpicks
+            prettier/eslint already enforce. Finish with a one-paragraph summary
+            comment on the PR.
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+
+  mention:
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '@claude') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
