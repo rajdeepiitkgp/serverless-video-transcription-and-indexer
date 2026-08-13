@@ -11,7 +11,8 @@
 //
 // Env: SMOKE_STORAGE_ACCOUNT (required), SMOKE_SWA_HOSTNAME (required),
 //      SMOKE_VIDEO_FILE (required, path to a small clip),
-//      SMOKE_TIMEOUT_MINUTES (default 20), SMOKE_POLL_SECONDS (default 15).
+//      SMOKE_TIMEOUT_MINUTES (default 20), SMOKE_POLL_SECONDS (default 15),
+//      SMOKE_HEALTH_RETRY_MINUTES (default 5).
 
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
@@ -32,19 +33,44 @@ const swaHostname = requireEnv('SMOKE_SWA_HOSTNAME');
 const videoFile = requireEnv('SMOKE_VIDEO_FILE');
 const timeoutMinutes = Number(process.env['SMOKE_TIMEOUT_MINUTES'] ?? '20');
 const pollSeconds = Number(process.env['SMOKE_POLL_SECONDS'] ?? '15');
+const healthRetryMinutes = Number(process.env['SMOKE_HEALTH_RETRY_MINUTES'] ?? '5');
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Retried: deploy-all runs smoke seconds after the webapi re-deploy, and the B1
+// site container takes a minute or two to come back — the SWA→backend path
+// serves 503 until it does (sixth Deploy all failed exactly there).
 const checkHealth = async (): Promise<void> => {
   const url = `https://${swaHostname}/api/health`;
-  const response = await fetch(url);
-  const body = (await response.json()) as { data?: { status?: string } };
-  const status = body.data?.status;
-  console.log(`smoke: GET ${url} → ${String(response.status)} (status: ${status ?? 'unknown'})`);
-  if (!response.ok) {
-    throw new Error(
-      `health endpoint returned ${String(response.status)} — SWA or linked backend is down`,
-    );
+  const deadline = Date.now() + healthRetryMinutes * 60_000;
+  for (;;) {
+    let failure: string;
+    try {
+      const response = await fetch(url);
+      let status: string | undefined;
+      try {
+        const body = (await response.json()) as { data?: { status?: string } };
+        status = body.data?.status;
+      } catch {
+        // SWA serves non-JSON error pages while the linked backend restarts.
+      }
+      console.log(
+        `smoke: GET ${url} → ${String(response.status)} (status: ${status ?? 'unknown'})`,
+      );
+      if (response.ok) {
+        return;
+      }
+      failure = `health endpoint returned ${String(response.status)}`;
+    } catch (error) {
+      failure = `health fetch failed: ${error instanceof Error ? error.message : String(error)}`;
+      console.log(`smoke: GET ${url} → ${failure}`);
+    }
+    if (Date.now() > deadline) {
+      throw new Error(
+        `${failure} after retrying for ${String(healthRetryMinutes)}m — SWA or linked backend is down`,
+      );
+    }
+    await sleep(10_000);
   }
 };
 
@@ -69,7 +95,8 @@ const main = async (): Promise<void> => {
     blobHTTPHeaders: { blobContentType: 'video/mp4' },
   });
 
-  const deadline = startedAt + timeoutMinutes * 60_000;
+  // From here, not startedAt: health retries must not eat the pipeline window.
+  const deadline = Date.now() + timeoutMinutes * 60_000;
   const insights = results.getBlobClient(`${uploadId}/insights.json`);
   const captions = results.getBlobClient(`${uploadId}/transcript.vtt`);
 
